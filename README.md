@@ -7,7 +7,14 @@ These tools are designed to be simple to use, and provide advanced performance o
 
 ## Contents
 
-- misc/__perf-stat-hist__: power-of aggregations for tracepoint variables
+Using perf_events:
+
+- misc/__perf-stat-hist__: power-of aggregations for tracepoint variables.
+
+Using ftrace:
+
+- kernel/__funccount__: count kernel functions that match a string.
+- kernel/__functrace__: trace kernel functions that match a string.
 
 ## Prerequisites
 
