@@ -63,7 +63,7 @@ function usage {
 
 function warn {
 	if ! eval "$@"; then
-		echo "WARNING: command failed \"$@\""
+		echo >&2 "WARNING: command failed \"$@\""
 	fi
 }
 
