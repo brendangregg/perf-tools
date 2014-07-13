@@ -13,7 +13,7 @@ These tools are designed to be simple to use, and provide advanced performance o
 
 Some tools use perf_events, some ftrace. Both of these are in Linux kernel source. See the top of the tool script to see which is used.
 
-- perf_events: requires the "perf" command to be installed. This is in the linux-tools-common package, or can be built under tools/perf in the kernel source. See (perf_events prerequisites)[http://www.brendangregg.com/perf.html#Prerequisites] for more details.
+- perf_events: requires the "perf" command to be installed. This is in the linux-tools-common package, or can be built under tools/perf in the kernel source. See [perf_events Prerequisites](http://www.brendangregg.com/perf.html#Prerequisites) for more details.
 - ftrace: FTRACE configured in the kernel.
 
 ## About These Tools
