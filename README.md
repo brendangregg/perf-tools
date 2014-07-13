@@ -9,6 +9,13 @@ These tools are designed to be simple to use, and provide advanced performance o
 
 - misc/__perf-stat-hist__: power-of aggregations for tracepoint variables
 
+## Prerequisites
+
+Some tools use perf_events, some ftrace. See the top of the tool script to see which. Both of these are in Linux kernel source.
+
+- ftrace: FTRACE configured in the kernel.
+- perf_events: requires the "perf" command to be installed. This is in the linux-tools-common package, or can be built under tools/perf in the kernel source. See (perf_events prerequisites)[http://www.brendangregg.com/perf.html#Prerequisites] for more details.
+
 ## About These Tools
 
 perf_events is evolving. This collection began developent on Linux 3.16, where perf_events lacks certain programmatic capabilities (eg, custom in-kernel aggregations). It's possible these will be added in a forthcoming kernel release. Until then, many of these tools employ workarounds, tricks, and hacks in order to work. This includes passing event data to user space for post-processing, which costs much higher overhead than in-kernel aggregations.
