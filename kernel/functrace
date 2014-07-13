@@ -98,16 +98,16 @@ fi
 
 # setup and commence tracing
 if [[ ! -x $tracing ]]; then
-	echo "ERROR: accessing tracing. Root user? Kernel has FTRACE? Exiting."
+	echo >&2 "ERROR: accessing tracing. Root user? Kernel has FTRACE?"
 	exit 1
 fi
 sysctl -q kernel.ftrace_enabled=1	# doesn't set exit status
 if ! echo "$funcs" > $tracing/set_ftrace_filter; then
-	echo "ERROR: enabling \"$funcs\". Exiting."
+	echo >&2 "ERROR: enabling \"$funcs\". Exiting."
 	exit 1
 fi
 if ! echo function > $tracing/current_tracer; then
-	echo "ERROR: setting current_tracer to \"function\". Exiting."
+	echo >&2 "ERROR: setting current_tracer to \"function\". Exiting."
 	exit 1
 fi
 
