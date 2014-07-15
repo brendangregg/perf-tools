@@ -5,7 +5,7 @@
 #
 # This is a proof of concept using Linux ftrace capabilities circa Linux 3.2.
 #
-# USAGE: functrace [-h] [-d secs] funcstring
+# USAGE: functrace [-h] [-p PID] [-d secs] funcstring
 #    eg,
 #        functrace '*sleep'	# trace all functions ending in "sleep"
 #
@@ -28,6 +28,11 @@
 #
 # OVERHEADS: This can generate a lot of trace data quickly, depending on the
 # frequency of the traced events. Such data will cause performance overheads.
+# This also works without buffering by default, printing function events
+# as they happen (uses trace_pipe), context switching and consuming CPU to do
+# so. If needed, you can try the "-d secs" option, which buffers events
+# instead, reducing overhead. If you think the buffer option is losing events,
+# try increasing the buffer size (buffer_size_kb).
 #
 # From perf-tools: https://github.com/brendangregg/perf-tools
 #
@@ -51,20 +56,22 @@
 #
 # 12-Jul-2014	Brendan Gregg	Created this.
 
-# default variables
+### default variables
 tracing=/sys/kernel/debug/tracing
-opt_duration=0; duration=
+flock=/var/tmp/.ftrace-lock
+opt_duration=0; duration=; opt_pid=0; pid=; pidtext=
 trap ':' SIGINT
 
 function usage {
 	cat <<-END >&2
-	USAGE: functrace [-h] [-d secs] funcstring
-	                 -d seconds      # total duration of trace; this mode
-	                                 # buffers tracing for this duration
+	USAGE: functrace [-h] [-p PID] [-d secs] funcstring
+	                 -d seconds      # trace duration, and use buffers
 	                 -h              # this usage message
+	                 -p PID          # trace when this pid is on-CPU
 	  eg,
 	        functrace do_nanosleep   # trace the do_nanosleep() function
 	        functrace '*sleep'       # trace functions ending in "sleep"
+	        functrace -p 198 'vfs*'  # trace "vfs*" funcs for PID 198
 	        functrace 'tcp*' > out   # trace all "tcp*" funcs to out file
 	        functrace -d 1 'tcp*' > out  # trace 1 sec, then write out file
 	END
@@ -77,53 +84,72 @@ function warn {
 	fi
 }
 
-# process options
-while getopts d:h name
+function die {
+	echo >&2 "$@"
+	exit 1
+}
+
+### process options
+while getopts d:hp: opt
 do
-	case $name in
+	case $opt in
 	d)	opt_duration=1; duration=$OPTARG ;;
+	p)	opt_pid=1; pid=$OPTARG ;;
 	h|?)	usage ;;
 	esac
 done
 shift $(( $OPTIND - 1 ))
 
-# option logic
+### option logic
 (( $# == 0 )) && usage
 funcs="$1"
+(( opt_pid )) && pidtext=" for PID $pid"
 if (( opt_duration )); then
-	echo "Tracing \"$funcs\" for $duration seconds..."
+	echo "Tracing \"$funcs\"$pidtext for $duration seconds..."
 else
-	echo "Tracing \"$funcs\"... Ctrl-C to end."
+	echo "Tracing \"$funcs\"$pidtext... Ctrl-C to end."
 fi
 
-# setup and commence tracing
-if [[ ! -x $tracing ]]; then
+### ftrace lock
+[[ -e $flock ]] && die "ERROR: ftrace in use by PID $(cat $flock) ($flock)"
+echo $$ > $flock || die "ERROR: unable to write $flock."
+
+### setup and commence tracing
+if ! cd $tracing; then
 	echo >&2 "ERROR: accessing tracing. Root user? Kernel has FTRACE?"
 	exit 1
 fi
 sysctl -q kernel.ftrace_enabled=1	# doesn't set exit status
-if ! echo "$funcs" > $tracing/set_ftrace_filter; then
+if (( opt_pid )); then
+	if ! echo $pid > set_ftrace_pid; then
+		echo >&2 "ERROR: setting -p $pid (PID exist?). Exiting."
+		exit 1
+	fi
+fi
+if ! echo "$funcs" > set_ftrace_filter; then
 	echo >&2 "ERROR: enabling \"$funcs\". Exiting."
 	exit 1
 fi
-if ! echo function > $tracing/current_tracer; then
+if ! echo function > current_tracer; then
 	echo >&2 "ERROR: setting current_tracer to \"function\". Exiting."
 	exit 1
 fi
 
-# print trace buffer
+### print trace buffer
 end=0; secs=0
-warn "echo > $tracing/trace"
+warn "echo > trace"
 if (( opt_duration )); then
 	sleep $duration
-	cat $tracing/trace
+	cat trace
 else
-	cat $tracing/trace_pipe
+	cat trace_pipe
 fi
 
-# end tracing
+### end tracing
 echo
 echo "Ending tracing..."
-warn "echo nop > $tracing/current_tracer"
-warn "echo > $tracing/set_ftrace_filter"
-warn "echo > $tracing/trace"
+warn "echo nop > current_tracer"
+(( opt_pid )) && warn "echo > set_ftrace_pid"
+warn "echo > set_ftrace_filter"
+warn "echo > trace"
+warn "rm $flock"
