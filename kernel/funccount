@@ -37,7 +37,7 @@
 #
 # 12-Jul-2014	Brendan Gregg	Created this.
 
-# default variables
+### default variables
 tracing=/sys/kernel/debug/tracing
 opt_duration=0; duration=; opt_interval=0; interval=999999; opt_timestamp=0
 opt_tail=0; tcmd=cat; ttext=
@@ -67,10 +67,10 @@ function warn {
 	fi
 }
 
-# process options
-while getopts d:hi:t:T name
+### process options
+while getopts d:hi:t:T opt
 do
-	case $name in
+	case $opt in
 	d)	opt_duration=1; duration=$OPTARG ;;
 	i)	opt_interval=1; interval=$OPTARG ;;
 	t)	opt_tail=1; tnum=$OPTARG ;;
@@ -80,7 +80,7 @@ do
 done
 shift $(( $OPTIND - 1 ))
 
-# option logic
+### option logic
 (( $# == 0 )) && usage
 funcs="$1"
 if (( opt_tail )); then
@@ -94,35 +94,35 @@ else
 fi
 (( opt_duration && !opt_interval )) && interval=$duration
 
-# setup and begin tracing
-if [[ ! -x $tracing ]]; then
+### setup and begin tracing
+if ! cd $tracing; then
 	echo >&2 "ERROR: accessing tracing. Root user? Kernel has FTRACE?"
 	exit 1
 fi
 sysctl -q kernel.ftrace_enabled=1	# doesn't set exit status
-if ! echo "$funcs" > $tracing/set_ftrace_filter; then
+if ! echo "$funcs" > set_ftrace_filter; then
 	echo >&2 "ERROR: enabling \"$funcs\". Exiting."
 	exit 1
 fi
-warn "echo nop > $tracing/current_tracer"
-if ! echo 1 > $tracing/function_profile_enabled; then
+warn "echo nop > current_tracer"
+if ! echo 1 > function_profile_enabled; then
 	echo >&2 "ERROR: enabling function profiling. Exiting."
 	exit 1
 fi
 
-# summarize
+### summarize
 end=0; secs=0
 while (( !end && (!opt_duration || secs < duration) )); do
 	(( secs += interval ))
-	echo 0 > $tracing/function_profile_enabled
-	echo 1 > $tracing/function_profile_enabled
+	echo 0 > function_profile_enabled
+	echo 1 > function_profile_enabled
 	sleep $interval
 
 	echo
 	(( opt_timestamp )) && date
 	printf "%-30s %8s\n" "FUNC" "COUNT"
 
-	cat $tracing/trace_stat/function* | awk '
+	cat trace_stat/function* | awk '
 	# skip headers by matching on the numeric hit column
 	$2 ~ /[0-9]/ { a[$1] += $2 }
 	END {
@@ -132,8 +132,8 @@ while (( !end && (!opt_duration || secs < duration) )); do
 	}' | sort -n -k2 | $tcmd
 done
 
-# end tracing
+### end tracing
 echo
 echo "Ending tracing..."
-warn "echo 0 > $tracing/function_profile_enabled"
-warn "echo > $tracing/set_ftrace_filter"
+warn "echo 0 > function_profile_enabled"
+warn "echo > set_ftrace_filter"
