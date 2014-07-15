@@ -53,15 +53,15 @@ pow=4				# power-of for bucket size
 max=$(( 1024 * 1024 ))		# intended max bucket value
 debug=0
 
-# Check that tracepoint exists
+### check that tracepoint exists
 if ! grep "^$tpoint\$" /sys/kernel/debug/tracing/available_events >/dev/null
 then
-	echo "ERROR: tracepoint \"$tpoint\" not found. Exiting..."
-	[[ "$USER" != "root" ]] && echo "Not root user?"
+	echo >&2 "ERROR: tracepoint \"$tpoint\" not found. Exiting..."
+	[[ "$USER" != "root" ]] && echo >&2 "Not root user?"
 	exit
 fi
 
-# Build list of tracepoints and filters for each histogram bucket
+### build list of tracepoints and filters for each histogram bucket
 tpoints=$(
 	echo ' -e' $tpoint --filter '"'$var' == 0"'
 	s=1;
@@ -79,13 +79,13 @@ fi
 
 echo "Tracing $tpoint, power-of-$pow, max $max, for $duration seconds..."
 
-# Run perf
+### run perf
 out="-o /dev/stdout"	# a workaround needed in linux 3.2; not by 3.4.15
 stat=$(eval perf stat $tpoints -a $out sleep $duration 2>&1)
 
 if (( $? != 0 )); then
-	echo "ERROR running perf:"
-	echo "$stat"
+	echo >&2 "ERROR running perf:"
+	echo >&2 "$stat"
 	exit
 fi
 
@@ -95,13 +95,13 @@ if (( debug )); then
 	echo
 fi
 
-# Find max value for ASCII histogram
+### find max value for ASCII histogram
 most=$(echo "$stat" | awk -v tpoint=$tpoint '
 	$2 == tpoint { gsub(/,/, ""); if ($1 > m) { m = $1 } }
 	END { print m }'
 )
 
-# Process output
+### process output
 echo
 echo "$stat" | awk -v tpoint=$tpoint -v max=$max -v pow=$pow -v most=$most '
 	function star(sval, smax, swidth) {
