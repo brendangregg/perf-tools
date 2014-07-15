@@ -41,7 +41,7 @@
 tracing=/sys/kernel/debug/tracing
 opt_duration=0; duration=; opt_interval=0; interval=999999; opt_timestamp=0
 opt_tail=0; tcmd=cat; ttext=
-trap 'end=1' SIGINT
+trap 'end=1' INT QUIT TERM PIPE	# sends execution to end tracing section
 
 function usage {
 	cat <<-END >&2
@@ -133,7 +133,7 @@ while (( !end && (!opt_duration || secs < duration) )); do
 done
 
 ### end tracing
-echo
-echo "Ending tracing..."
+echo 2>/dev/null
+echo "Ending tracing..." 2>/dev/null
 warn "echo 0 > function_profile_enabled"
 warn "echo > set_ftrace_filter"

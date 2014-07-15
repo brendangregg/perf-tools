@@ -60,7 +60,7 @@
 tracing=/sys/kernel/debug/tracing
 flock=/var/tmp/.ftrace-lock
 opt_duration=0; duration=; opt_pid=0; pid=; pidtext=
-trap ':' SIGINT
+trap ':' INT QUIT TERM PIPE	# sends execution to end tracing section
 
 function usage {
 	cat <<-END >&2
@@ -148,8 +148,8 @@ else
 fi
 
 ### end tracing
-echo
-echo "Ending tracing..."
+echo 2>/dev/null
+echo "Ending tracing..." 2>/dev/null
 warn "echo nop > current_tracer"
 (( opt_pid )) && warn "echo > set_ftrace_pid"
 warn "echo > set_ftrace_filter"
