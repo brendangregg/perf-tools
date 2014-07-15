@@ -111,7 +111,7 @@ else
 fi
 
 ### ftrace lock
-[[ -e $flock ]] && die "ERROR: ftrace in use by PID $(cat $flock) ($flock)"
+[[ -e $flock ]] && die "ERROR: ftrace may be in use by PID $(cat $flock) $flock"
 echo $$ > $flock || die "ERROR: unable to write $flock."
 
 ### setup and commence tracing
@@ -120,6 +120,8 @@ if ! cd $tracing; then
 	exit 1
 fi
 sysctl -q kernel.ftrace_enabled=1	# doesn't set exit status
+read mode < current_tracer
+[[ "$mode" != "nop" ]] && die "ERROR: ftrace active (current_tracer=$mode)"
 if (( opt_pid )); then
 	if ! echo $pid > set_ftrace_pid; then
 		echo >&2 "ERROR: setting -p $pid (PID exist?). Exiting."
