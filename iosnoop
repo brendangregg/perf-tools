@@ -1,0 +1,229 @@
+#!/bin/bash
+#
+# iosnoop - trace block device I/O.
+#           Written using Linux ftrace.
+#
+# This traces disk I/O at the block device interface, using the block:
+# tracepoints. This can help characterize the I/O requested for the storage
+# devices and their resulting performance. I/O completions can also be studied
+# event-by-event for debugging disk and controller I/O scheduling issues.
+#
+# USAGE: ./iosnoop [-hst] [-d secs] [-p pid] [-n name]
+#
+# REQUIREMENTS: FTRACE CONFIG, block:block_rq_* tracepoints (you may
+# already have these on recent kernels).
+#
+# OVERHEAD: By default, iosnoop works without buffering, printing I/O events
+# as they happen (uses trace_pipe), context switching and consuming CPU to do
+# so. This has a limit of about 10,000 IOPS (depending on your platform), at
+# which point iosnoop will be consuming 1 CPU. The "-d secs" mode uses buffering,
+# and can handle much higher IOPS rates, however, the buffer has a limit of
+# about 50,000 I/O, after which events will be dropped. You can tune this with
+# bufsize_kb, which is per-CPU. Also note that the "-n" option is currently
+# post-filtered, so all events are traced.
+#
+# This was written as a proof of concept for ftrace. It would be better written
+# using perf_events (after some capabilities are added), which has a better
+# buffering policy, or a tracer such as SystemTap or ktap.
+#
+# From perf-tools: https://github.com/brendangregg/perf-tools
+#
+# See the iosnoop(8) man page (in perf-tools) for more info.
+#
+# COPYRIGHT: Copyright (c) 2014 Brendan Gregg.
+#
+#  This program is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU General Public License
+#  as published by the Free Software Foundation; either version 2
+#  of the License, or (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software Foundation,
+#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#
+#  (http://www.gnu.org/copyleft/gpl.html)
+#
+# 12-Jul-2014	Brendan Gregg	Created this.
+
+### default variables
+tracing=/sys/kernel/debug/tracing
+flock=/var/tmp/.ftrace-lock
+bufsize_kb=4096
+opt_duration=0; duration=; opt_name=0; name=; opt_pid=0; pid=; ftext=
+opt_start=0; opt_end=0
+trap ':' INT QUIT TERM PIPE	# sends execution to end tracing section
+
+function usage {
+	cat <<-END >&2
+	USAGE: iosnoop [-hst] [-d secs] [-p PID] [-n name]
+	                 -d seconds      # trace duration, and use buffers
+	                 -n name         # process name to match on I/O issue
+	                 -p PID          # PID to match on I/O issue
+	                 -s              # include start time of I/O (s)
+	                 -t              # include completion time of I/O (s)
+	                 -h              # this usage message
+	  eg,
+	        iosnoop                  # watch block I/O live (unbuffered)
+	        iosnoop -d 1             # trace 1 sec (buffered)
+	        iosnoop -p 181           # trace I/O issued by PID 181 only
+	END
+	exit
+}
+
+function warn {
+	if ! eval "$@"; then
+		echo >&2 "WARNING: command failed \"$@\""
+	fi
+}
+
+function die {
+	echo >&2 "$@"
+	exit 1
+}
+
+### process options
+while getopts d:hn:p:st opt
+do
+	case $opt in
+	d)	opt_duration=1; duration=$OPTARG ;;
+	n)	opt_name=1; name=$OPTARG ;;
+	p)	opt_pid=1; pid=$OPTARG ;;
+	s)	opt_start=1 ;;
+	t)	opt_end=1 ;;
+	h|?)	usage ;;
+	esac
+done
+shift $(( $OPTIND - 1 ))
+
+### option logic
+(( opt_pid && opt_name )) && die "ERROR: use either -p or -n."
+(( opt_pid )) && ftext=" issued by PID $pid"
+(( opt_name )) && ftext=" issued by process name \"$name\""
+if (( opt_duration )); then
+	echo "Tracing block I/O$ftext for $duration seconds (buffered)..."
+else
+	echo "Tracing block I/O$ftext. Ctrl-C to end."
+fi
+
+### ftrace lock
+[[ -e $flock ]] && die "ERROR: ftrace may be in use by PID $(cat $flock) $flock"
+echo $$ > $flock || die "ERROR: unable to write $flock."
+
+### select awk
+(( opt_duration )) && use=mawk || use=gawk	# workaround for mawk fflush()
+[[ -x /usr/bin/$use ]] && awk=$use || awk=awk
+
+### setup and begin tracing
+cd $tracing || die "ERROR: accessing tracing. Root user? Kernel has FTRACE?"
+echo nop > current_tracer
+warn "echo $bufsize_kb > buffer_size_kb"
+if (( opt_pid )); then
+	if ! echo "common_pid==$pid" > events/block/block_rq_issue/filter; then
+	    die "ERROR: setting -p $pid. Continuing..."
+	fi
+fi
+if ! echo 1 > events/block/block_rq_issue/enable || \
+    ! echo 1 > events/block/block_rq_complete/enable; then
+	die "ERROR: enabling block I/O tracepoints. Exiting."
+fi
+(( opt_start )) && printf "%-14s " "STARTs"
+(( opt_end )) && printf "%-14s " "ENDs"
+printf "%-16.16s %-6s %-4s %-8s %-12s %-6s %8s\n" \
+    "COMM" "PID" "TYPE" "DEV" "BLOCK" "BYTES" "LATms"
+
+#
+# Determine output format. It may be one of the following (newest first):
+#           TASK-PID   CPU#  ||||    TIMESTAMP  FUNCTION
+#           TASK-PID    CPU#    TIMESTAMP  FUNCTION
+# To differentiate between them, the number of header fields is counted,
+# and an offset set, to skip the extra column when needed.
+#
+offset=$($awk 'BEGIN { o = 0; }
+	$1 == "#" && $2 ~ /TASK/ && NF == 6 { o = 1; }
+	$2 ~ /TASK/ { print o; exit }' trace)
+
+### print trace buffer
+warn "echo > trace"
+( if (( opt_duration )); then
+	# wait then dump buffer
+	sleep $duration
+	cat trace
+else
+	# print buffer live
+	cat trace_pipe
+fi ) | $awk -v o=$offset -v opt_name=$opt_name -v name=$name \
+    -v opt_duration=$opt_duration -v opt_start=$opt_start -v opt_end=$opt_end '
+	# common fields
+	$1 != "#" {
+		# task name can contain dashes
+		comm = pid = $1
+		sub(/-[0-9][0-9]*/, "", comm)
+		sub(/.*-/, "", pid)
+		time = $(3+o); sub(":", "", time)
+		dev = $(5+o)
+	}
+
+	$1 != "#" && $0 ~ /rq_issue/ {
+		if (opt_name && match(comm, name) == 0)
+			next
+		#
+		# example: (fields1..4+o) 202,1 W 0 () 12862264 + 8 [tar]
+		# The cmd field "()" might contain multiple words (hex),
+		# hence stepping from the right (NF-3).
+		#
+		loc = $(NF-3)
+		starts[dev, loc] = time
+		comms[dev, loc] = comm
+		pids[dev, loc] = pid
+		next
+	}
+
+	$1 != "#" && $0 ~ /rq_complete/ {
+		#
+		# example: (fields1..4+o) 202,1 W () 12862256 + 8 [0]
+		#
+		dir = $(6+o)
+		loc = $(NF-3)
+		nsec = $(NF-1)
+
+		if (starts[dev, loc] > 0) {
+			latency = sprintf("%.2f",
+			    1000 * (time - starts[dev, loc]))
+			comm = comms[dev, loc]
+			pid = pids[dev, loc]
+
+			if (opt_start)
+				printf "%-14s ", starts[dev, loc]
+			if (opt_end)
+				printf "%-14s ", time
+			printf "%-16.16s %-6s %-4s %-8s %-12s %-6s %8s\n",
+			    comm, pid, dir, dev, loc, nsec * 512, latency
+			if (!opt_duration)
+				fflush()
+
+			delete starts[dev, loc]
+			delete comms[dev, loc]
+			delete pids[dev, loc]
+		}
+		next
+	}
+
+	$0 ~ /LOST.*EVENTS/ { print "WARNING: " $0 > "/dev/stderr" }
+'
+
+### end tracing
+echo 2>/dev/null
+echo "Ending tracing..." 2>/dev/null
+if ! echo 0 > events/block/block_rq_issue/enable || \
+    ! echo 0 > events/block/block_rq_complete/enable; then
+	echo >&2 "ERROR: disabling block I/O tracepoints."
+	exit 1
+fi
+(( opt_pid )) && warn "echo 0 > events/block/block_rq_issue/filter"
+warn "echo > trace"
+warn "rm $flock"
