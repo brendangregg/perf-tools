@@ -168,6 +168,7 @@ fi ) | $awk -v o=$offset -v opt_name=$opt_name -v name=$name \
 		dev = $(5+o)
 	}
 
+	# block I/O request
 	$1 != "#" && $0 ~ /rq_issue/ {
 		if (opt_name && match(comm, name) == 0)
 			next
@@ -183,6 +184,7 @@ fi ) | $awk -v o=$offset -v opt_name=$opt_name -v name=$name \
 		next
 	}
 
+	# block I/O completion
 	$1 != "#" && $0 ~ /rq_complete/ {
 		#
 		# example: (fields1..4+o) 202,1 W () 12862256 + 8 [0]
