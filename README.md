@@ -21,7 +21,8 @@ Using ftrace:
 
 ### perf_events
 
-Requires the "perf" command to be installed. This is in the linux-tools-common package, or can be built under tools/perf in the kernel source. See [perf_events Prerequisites](http://www.brendangregg.com/perf.html#Prerequisites) for more details.
+Requires the "perf" command to be installed. This is in the linux-tools-common package. After installing that, perf may tell you to install an additional linux-tools package (linux-tools-_kernel-version_). perf can also be built under tools/perf in the kernel source. See [perf_events Prerequisites](http://www.brendangregg.com/perf.html#Prerequisites) for more details.
+
 ### ftrace
 
 FTRACE configured in the kernel.
