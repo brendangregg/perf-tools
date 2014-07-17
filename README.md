@@ -14,6 +14,7 @@ Using perf_events:
 Using ftrace:
 
 - [iosnoop](iosnoop): trace disk I/O with details including latency.
+- [execsnoop](execsnoop): trace process exec() with command line argument details.
 - kernel/[funccount](kernel/funccount): count kernel functions that match a string.
 - kernel/[functrace](kernel/functrace): trace kernel functions that match a string.
 
