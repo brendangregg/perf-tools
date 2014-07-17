@@ -83,6 +83,7 @@ function warn {
 
 function die {
 	echo >&2 "$@"
+	[[ -e $flock ]] && rm $flock
 	exit 1
 }
 
