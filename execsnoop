@@ -20,7 +20,10 @@
 # If the process traced is very short-lived, this program may miss reading
 # arguments and PPID details. In that case, "<?>" and "?" will be printed
 # respectively. This program is best-effort, and should be improved in the
-# future when other kernel capabilities are made available.
+# future when other kernel capabilities are made available. If you need a
+# more reliable tool now, then consider other tracing alternatives (eg,
+# SystemTap). This tool is really a proof of concept to see what ftrace can
+# currently do.
 #
 # From perf-tools: https://github.com/brendangregg/perf-tools
 #
