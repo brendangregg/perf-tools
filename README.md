@@ -26,6 +26,22 @@ Requires the "perf" command to be installed. This is in the linux-tools-common p
 
 FTRACE configured in the kernel.
 
+## Install
+
+These are just scripts. Either grab everything:
+
+```
+git clone https://github.com/brendangregg/perf-tools
+```
+
+Or use the raw links on github to download individual scripts. Eg
+
+```
+wget https://raw.githubusercontent.com/brendangregg/perf-tools/master/iosnoop
+```
+
+This preserves tabs (which copy-n-paste can mess up).
+
 ## Internals, Warnings, and Overhead
 
 perf_events is evolving. This collection began developent on Linux 3.16, where perf_events lacks certain programmatic capabilities (eg, custom in-kernel aggregations). It's possible these will be added in a forthcoming kernel release. Until then, many of these tools employ workarounds, tricks, and hacks in order to work. This includes passing event data to user space for post-processing, which costs much higher overhead than in-kernel aggregations.
