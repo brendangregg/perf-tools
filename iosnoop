@@ -71,7 +71,7 @@ function usage {
 	        iosnoop                  # watch block I/O live (unbuffered)
 	        iosnoop -d 1             # trace 1 sec (buffered)
 	        iosnoop -p 181           # trace I/O issued by PID 181 only
-	END
+END
 	exit
 }
 
