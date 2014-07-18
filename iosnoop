@@ -83,8 +83,12 @@ function warn {
 
 function die {
 	echo >&2 "$@"
-	[[ -e $flock ]] && rm $flock
 	exit 1
+}
+
+function ldie {
+	[[ -e $flock ]] && rm $flock
+	die "$@"
 }
 
 ### process options
@@ -120,17 +124,17 @@ echo $$ > $flock || die "ERROR: unable to write $flock."
 [[ -x /usr/bin/$use ]] && awk=$use || awk=awk
 
 ### setup and begin tracing
-cd $tracing || die "ERROR: accessing tracing. Root user? Kernel has FTRACE?"
+cd $tracing || ldie "ERROR: accessing tracing. Root user? Kernel has FTRACE?"
 echo nop > current_tracer
 warn "echo $bufsize_kb > buffer_size_kb"
 if (( opt_pid )); then
-	if ! echo "common_pid==$pid" > events/block/block_rq_issue/filter; then
-	    die "ERROR: setting -p $pid. Exiting."
+	if ! echo "commonpid==$pid" > events/block/block_rq_issue/filter; then
+	    ldie "ERROR: setting -p $pid. Exiting."
 	fi
 fi
 if ! echo 1 > events/block/block_rq_issue/enable || \
     ! echo 1 > events/block/block_rq_complete/enable; then
-	die "ERROR: enabling block I/O tracepoints. Exiting."
+	ldie "ERROR: enabling block I/O tracepoints. Exiting."
 fi
 (( opt_start )) && printf "%-14s " "STARTs"
 (( opt_end )) && printf "%-14s " "ENDs"

@@ -89,6 +89,11 @@ function die {
 	exit 1
 }
 
+function ldie {
+	[[ -e $flock ]] && rm $flock
+	die "$@"
+}
+
 ### process options
 while getopts d:hp: opt
 do
@@ -116,25 +121,21 @@ echo $$ > $flock || die "ERROR: unable to write $flock."
 
 ### setup and commence tracing
 if ! cd $tracing; then
-	echo >&2 "ERROR: accessing tracing. Root user? Kernel has FTRACE?"
-	exit 1
+	ldie "ERROR: accessing tracing. Root user? Kernel has FTRACE?"
 fi
 sysctl -q kernel.ftrace_enabled=1	# doesn't set exit status
 read mode < current_tracer
-[[ "$mode" != "nop" ]] && die "ERROR: ftrace active (current_tracer=$mode)"
+[[ "$mode" != "nop" ]] && ldie "ERROR: ftrace active (current_tracer=$mode)"
 if (( opt_pid )); then
 	if ! echo $pid > set_ftrace_pid; then
-		echo >&2 "ERROR: setting -p $pid (PID exist?). Exiting."
-		exit 1
+		ldie "ERROR: setting -p $pid (PID exist?). Exiting."
 	fi
 fi
 if ! echo "$funcs" > set_ftrace_filter; then
-	echo >&2 "ERROR: enabling \"$funcs\". Exiting."
-	exit 1
+	ldie "ERROR: enabling \"$funcs\". Exiting."
 fi
 if ! echo function > current_tracer; then
-	echo >&2 "ERROR: setting current_tracer to \"function\". Exiting."
-	exit 1
+	ldie "ERROR: setting current_tracer to \"function\". Exiting."
 fi
 
 ### print trace buffer
