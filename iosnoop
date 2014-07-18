@@ -125,7 +125,7 @@ echo nop > current_tracer
 warn "echo $bufsize_kb > buffer_size_kb"
 if (( opt_pid )); then
 	if ! echo "common_pid==$pid" > events/block/block_rq_issue/filter; then
-	    die "ERROR: setting -p $pid. Continuing..."
+	    die "ERROR: setting -p $pid. Exiting."
 	fi
 fi
 if ! echo 1 > events/block/block_rq_issue/enable || \
