@@ -128,7 +128,7 @@ cd $tracing || ldie "ERROR: accessing tracing. Root user? Kernel has FTRACE?"
 echo nop > current_tracer
 warn "echo $bufsize_kb > buffer_size_kb"
 if (( opt_pid )); then
-	if ! echo "commonpid==$pid" > events/block/block_rq_issue/filter; then
+	if ! echo "common_pid==$pid" > events/block/block_rq_issue/filter; then
 	    ldie "ERROR: setting -p $pid. Exiting."
 	fi
 fi
