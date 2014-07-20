@@ -5,7 +5,7 @@
 #
 # This is a proof of concept using Linux ftrace capabilities circa Linux 3.2.
 #
-# USAGE: functrace [-h] [-p PID] [-d secs] funcstring
+# USAGE: functrace [-hH] [-p PID] [-d secs] funcstring
 #    eg,
 #        functrace '*sleep'	# trace all functions ending in "sleep"
 #
@@ -59,14 +59,15 @@
 ### default variables
 tracing=/sys/kernel/debug/tracing
 flock=/var/tmp/.ftrace-lock
-opt_duration=0; duration=; opt_pid=0; pid=; pidtext=
+opt_duration=0; duration=; opt_pid=0; pid=; pidtext=; opt_headers=0
 trap ':' INT QUIT TERM PIPE	# sends execution to end tracing section
 
 function usage {
 	cat <<-END >&2
-	USAGE: functrace [-h] [-p PID] [-d secs] funcstring
+	USAGE: functrace [-hH] [-p PID] [-d secs] funcstring
 	                 -d seconds      # trace duration, and use buffers
 	                 -h              # this usage message
+	                 -H              # include column headers
 	                 -p PID          # trace when this pid is on-CPU
 	  eg,
 	        functrace do_nanosleep   # trace the do_nanosleep() function
@@ -95,11 +96,12 @@ function ldie {
 }
 
 ### process options
-while getopts d:hp: opt
+while getopts d:hHp: opt
 do
 	case $opt in
 	d)	opt_duration=1; duration=$OPTARG ;;
 	p)	opt_pid=1; pid=$OPTARG ;;
+	H)	opt_headers=1; ;;
 	h|?)	usage ;;
 	esac
 done
@@ -143,8 +145,14 @@ end=0; secs=0
 warn "echo > trace"
 if (( opt_duration )); then
 	sleep $duration
-	cat trace
+	if (( opt_headers )); then
+		cat trace
+	else
+		grep -v '^#' trace
+	fi
 else
+	# trace_pipe lack headers, so fetch them from trace
+	(( opt_headers )) && cat trace
 	cat trace_pipe
 fi
 
