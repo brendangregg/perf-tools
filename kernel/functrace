@@ -3,7 +3,7 @@
 # functrace - trace kernel function calls matching specified wildcards.
 #             A hack using Linux ftrace.
 #
-# This is a proof of concept using Linux ftrace capabilities circa Linux 3.2.
+# This is a proof of concept using Linux ftrace capabilities on older kernels.
 #
 # USAGE: functrace [-hH] [-p PID] [-d secs] funcstring
 #    eg,
