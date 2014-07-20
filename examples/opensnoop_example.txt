@@ -1,0 +1,24 @@
+Demonstrations of opensnoop, the Linux ftrace version.
+
+# ./opensnoop
+Tracing open()s. Ctrl-C to end.
+COMM             PID      FD FILE
+opensnoop        5334    0x3 
+<...>            5343    0x3 /etc/ld.so.cache
+opensnoop        5342    0x3 /etc/ld.so.cache
+<...>            5343    0x3 /lib/x86_64-linux-gnu/libc.so.6
+opensnoop        5342    0x3 /lib/x86_64-linux-gnu/libm.so.6
+opensnoop        5342    0x3 /lib/x86_64-linux-gnu/libc.so.6
+<...>            5343    0x3 /usr/lib/locale/locale-archive
+<...>            5343    0x3 trace_pipe
+supervise        1684    0x9 supervise/status.new
+supervise        1684    0x9 supervise/status.new
+supervise        1688    0x9 supervise/status.new
+supervise        1688    0x9 supervise/status.new
+supervise        1686    0x9 supervise/status.new
+supervise        1685    0x9 supervise/status.new
+supervise        1685    0x9 supervise/status.new
+supervise        1686    0x9 supervise/status.new
+[...]
+
+The first several lines show opensnoop catching itself initializing.

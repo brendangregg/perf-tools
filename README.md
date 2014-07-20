@@ -17,6 +17,7 @@ Using ftrace:
 
 - [iosnoop](iosnoop): trace disk I/O with details including latency. [Examples](examples/iosnoop_example.txt).
 - [execsnoop](execsnoop): trace process exec() with command line argument details. [Examples](examples/execsnoop_example.txt).
+- [opensnoop](opensnoop): trace open() syscalls showing filenames. [Examples](examples/opensnoop_example.txt).
 - kernel/[funccount](kernel/funccount): count kernel functions that match a string. [Examples](examples/funccount_example.txt).
 - kernel/[functrace](kernel/functrace): trace kernel functions that match a string. [Examples](examples/functrace_example.txt).
 - tools/[reset-ftrace](tools/reset-ftrace): reset ftrace state if needed.
