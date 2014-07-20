@@ -1,4 +1,4 @@
-Demonstrations of execsnoop.
+Demonstrations of execsnoop, the Linux ftrace version.
 
 Here's execsnoop showing what's really executed by "man ls":
 

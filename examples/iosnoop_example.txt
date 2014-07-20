@@ -1,4 +1,4 @@
-Demonstrations of iosnoop.
+Demonstrations of iosnoop, the Linux ftrace version.
 
 Here's Linux 3.16, tracing tar archiving a filesystem:
 

@@ -1,3 +1,5 @@
+Demonstrations of funccount, the Linux ftrace version.
+
 Tracing all kernel functions that start with "bio_" (which would be block
 interface functions), and counting how many times they were executed until
 Ctrl-C is hit:
