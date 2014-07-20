@@ -1,0 +1,75 @@
+Demonstrations of perf-stat-hist, the Linux perf_events version.
+
+Tracing the net:net_dev_xmit tracepoint, and building a power-of-4 histogram
+for the "len" variable, for 10 seconds:
+
+# ./perf-stat-hist net:net_dev_xmit len 10
+Tracing net:net_dev_xmit, power-of-4, max 1048576, for 10 seconds...
+
+            Range          : Count    Distribution
+            0              : 0        |                                      |
+            1 -> 3         : 0        |                                      |
+            4 -> 15        : 0        |                                      |
+           16 -> 63        : 2        |#                                     |
+           64 -> 255       : 30       |###                                   |
+          256 -> 1023      : 3        |#                                     |
+         1024 -> 4095      : 446      |######################################|
+         4096 -> 16383     : 0        |                                      |
+        16384 -> 65535     : 0        |                                      |
+        65536 -> 262143    : 0        |                                      |
+       262144 -> 1048575   : 0        |                                      |
+      1048576 ->           : 0        |                                      |
+
+This showed that most of the network transmits were between 1024 and 4095 bytes,
+with a handful between 64 and 255 bytes.
+
+Cat the format file for the tracepoint to see what other variables are available
+to trace. Eg:
+
+# cat /sys/kernel/debug/tracing/events/net/net_dev_xmit/format 
+name: net_dev_xmit
+ID: 1078
+format:
+	field:unsigned short common_type;	offset:0;	size:2;	signed:0;
+	field:unsigned char common_flags;	offset:2;	size:1;	signed:0;
+	field:unsigned char common_preempt_count;	offset:3;	size:1;	signed:0;
+	field:int common_pid;	offset:4;	size:4;	signed:1;
+
+	field:void * skbaddr;	offset:8;	size:8;	signed:0;
+	field:unsigned int len;	offset:16;	size:4;	signed:0;
+	field:int rc;	offset:20;	size:4;	signed:1;
+	field:__data_loc char[] name;	offset:24;	size:4;	signed:1;
+
+print fmt: "dev=%s skbaddr=%p len=%u rc=%d", __get_str(name), REC->skbaddr, REC->len, REC->rc
+
+That's where "len" came from.
+
+This works by creating a series of tracepoint and filter pairs for each
+histogram bucket, and doing in-kernel counts. The overhead should in many cases
+be better than user space post-processing, however, this approach is still
+not ideal. I've called it a "perf hacktogram". The overhead is relative to
+the frequency of events, multiplied by the number of buckets. You can modify
+the script to use power-of-2 instead, or whatever you like, but the overhead
+for more buckets will be higher.
+
+
+Histogram of the returned read() syscall sizes:
+
+# ./perf-stat-hist syscalls:sys_exit_read ret 10
+Tracing syscalls:sys_exit_read, power-of-4, max 1048576, for 10 seconds...
+
+            Range          : Count    Distribution
+            0              : 90       |#                                     |
+            1 -> 3         : 9587     |######################################|
+            4 -> 15        : 69       |#                                     |
+           16 -> 63        : 590      |###                                   |
+           64 -> 255       : 250      |#                                     |
+          256 -> 1023      : 389      |##                                    |
+         1024 -> 4095      : 296      |##                                    |
+         4096 -> 16383     : 183      |#                                     |
+        16384 -> 65535     : 12       |#                                     |
+        65536 -> 262143    : 0        |                                      |
+       262144 -> 1048575   : 0        |                                      |
+      1048576 ->           : 0        |                                      |
+
+Most of our read()s were tiny, between 1 and 3 bytes.
