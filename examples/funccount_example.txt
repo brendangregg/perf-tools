@@ -58,3 +58,44 @@ tcp_v4_md5_do_lookup               1071
 [...]
 
 Neat.
+
+
+Tracing all "ext4*" kernel functions for 10 seconds, and printing the top 25:
+
+# ./funccount -t 25 -d 10 'ext4*'
+Tracing "ext4*" for 10 seconds. Top 25 only...
+
+FUNC                              COUNT
+ext4_inode_bitmap                   840
+ext4_meta_trans_blocks              840
+ext4_ext_drop_refs                  843
+ext4_find_entry                     845
+ext4_discard_preallocations        1008
+ext4_free_inodes_count             1120
+ext4_group_desc_csum               1120
+ext4_group_desc_csum_set           1120
+ext4_getblk                        1128
+ext4_es_free_extent                1328
+ext4_map_blocks                    1471
+ext4_es_lookup_extent              1751
+ext4_mb_check_limits               1873
+ext4_es_lru_add                    2031
+ext4_data_block_valid              2312
+ext4_journal_check_start           3080
+ext4_mark_inode_dirty              5320
+ext4_get_inode_flags               5955
+ext4_get_inode_loc                 5955
+ext4_mark_iloc_dirty               5955
+ext4_reserve_inode_write           5955
+ext4_inode_table                   7076
+ext4_get_group_desc                8476
+ext4_has_inline_data               9492
+ext4_inode_touch_time_cmp         38980
+
+Ending tracing...
+
+So ext4_inode_touch_time_cmp() was called the most frequently, at 38,980 times.
+This may be normal, this may not. The purpose of this tool is to give you one
+view of how one or many kernel functions are executed. Previously I had little
+idea what ext4 was doing internally. Now I know the top 25 functions, and their
+rate, and can begin researching them from the source code.
