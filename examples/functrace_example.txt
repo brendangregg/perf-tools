@@ -1,0 +1,60 @@
+Demonstrations of functrace, the Linux ftrace version.
+
+A (usually) good example to start with is do_nanosleep(), since it is not called
+frequently, and easily triggered. Here's tracing it using functrace:
+
+# ./functrace 'do_nanosleep'
+Tracing "do_nanosleep"... Ctrl-C to end.
+          svscan-1678  [000] .... 6412438.703521: do_nanosleep <-hrtimer_nanosleep
+          svscan-1678  [000] .... 6412443.703678: do_nanosleep <-hrtimer_nanosleep
+          svscan-1678  [000] .... 6412448.703865: do_nanosleep <-hrtimer_nanosleep
+          vmstat-28371 [000] .... 6412453.216241: do_nanosleep <-hrtimer_nanosleep
+          svscan-1678  [000] .... 6412453.704049: do_nanosleep <-hrtimer_nanosleep
+          vmstat-28371 [000] .... 6412454.216524: do_nanosleep <-hrtimer_nanosleep
+          vmstat-28371 [000] .... 6412455.216816: do_nanosleep <-hrtimer_nanosleep
+          vmstat-28371 [000] .... 6412456.217093: do_nanosleep <-hrtimer_nanosleep
+          vmstat-28371 [000] .... 6412457.217378: do_nanosleep <-hrtimer_nanosleep
+          vmstat-28371 [000] .... 6412458.217660: do_nanosleep <-hrtimer_nanosleep
+^C
+Ending tracing...
+
+While tracing, I ran a "vmstat 1" in another window. vmstat and its process ID
+can be seen as the 1st column, and the timestamp and one second intervals can
+be seen as the 4th column.
+
+This is Linux 3.16, and the output is the ftrace text buffer format, which has
+changed slightly between kernel versions.
+
+
+To see the column headers, use -H. This is Linux 3.16:
+
+# ./functrace -H do_nanosleep
+Tracing "do_nanosleep"... Ctrl-C to end.
+# tracer: function
+#
+# entries-in-buffer/entries-written: 0/0   #P:2
+#
+#                              _-----=> irqs-off
+#                             / _----=> need-resched
+#                            | / _---=> hardirq/softirq
+#                            || / _--=> preempt-depth
+#                            ||| /     delay
+#           TASK-PID   CPU#  ||||    TIMESTAMP  FUNCTION
+#              | |       |   ||||       |         |
+          svscan-1678  [001] .... 6413283.729520: do_nanosleep <-hrtimer_nanosleep
+          svscan-1678  [001] .... 6413288.729679: do_nanosleep <-hrtimer_nanosleep
+
+For comparison, here's Linux 3.2:
+
+# ./functrace -H do_nanosleep
+Tracing "do_nanosleep"... Ctrl-C to end.
+# tracer: function
+#
+#           TASK-PID    CPU#    TIMESTAMP  FUNCTION
+#              | |       |          |         |
+          vmstat-11789 [000] 1763207.021204: do_nanosleep <-hrtimer_nanosleep
+          vmstat-11789 [000] 1763208.022970: do_nanosleep <-hrtimer_nanosleep
+          vmstat-11789 [000] 1763209.023267: do_nanosleep <-hrtimer_nanosleep
+
+For documentation on the exact format, see the Linux kernel source under
+Documentation/trace/ftrace.txt.
