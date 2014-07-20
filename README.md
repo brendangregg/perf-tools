@@ -5,7 +5,7 @@ A miscellaneous collection of in-development and unsupported performance analysi
 
 These tools are designed to be simple to use, and provide advanced performance observability. This collection was written by Brendan Gregg (author of the DTraceToolkit).
 
-Many of these tools employ workarounds so that functionality is possible without certain kernel features. Because of this, the implementation of such tools should be considered a placeholder until certain kernel features are added, at which point, they can be substantially rewritten (reducing overhead, improving robustness, or both).
+Many of these tools employ workarounds so that functionality is possible without certain kernel features. Because of this, the implementation of such tools should be considered a placeholder until certain kernel features are added, at which point, they can be substantially rewritten.
 
 ## Contents
 
@@ -19,7 +19,7 @@ Using ftrace:
 - [execsnoop](execsnoop): trace process exec() with command line argument details.
 - kernel/[funccount](kernel/funccount): count kernel functions that match a string.
 - kernel/[functrace](kernel/functrace): trace kernel functions that match a string.
-- tools/[reset-ftrace](tools/reset-ftrate): reset ftrace state if needed.
+- tools/[reset-ftrace](tools/reset-ftrace): reset ftrace state if needed.
 
 ## Prerequisites
 
