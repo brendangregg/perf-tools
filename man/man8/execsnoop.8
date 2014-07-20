@@ -28,13 +28,19 @@ Since this uses ftrace, only the root user can use this tool.
 .SH REQUIREMENTS
 FTRACE CONFIG, sched:sched_process_exec tracepoint (you may already have these
 on recent kernels), and Perl.
-.PP
 .SH OPTIONS
 \-n name
 Only show processes that match this name. This is filtered in user space.
 .TP
 \-h
 Print usage message.
+.SH EXAMPLES
+.TP
+Trace all new processes and arguments (if possible):
+.B execsnoop
+.TP
+Trace all new processes with process name "sed":
+.B execsnoop -n sed
 .SH FIELDS
 .TP
 TIME
@@ -50,15 +56,13 @@ processes). If it is unable to be read, "?" is printed.
 ARGS
 Command line arguments, if these were able to be read in time (may be missed
 for short-lived processes). If they are unable to be read, "<?>" is printed.
-.PP
 .SH OVERHEAD
 This reads and processes exec() events in user space as they occur. Since the
 rate of exec() is expected to be low (< 500/s), the overhead is expected to
 be small or negligible.
-.PP
 .SH SOURCE
 This is from the perf-tools collection.
-.PP
+.IP
 https://github.com/brendangregg/perf-tools
 .PP
 Also look under the examples directory for a text file containing example

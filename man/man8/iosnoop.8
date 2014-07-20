@@ -17,8 +17,7 @@ Since this uses ftrace, only the root user can use this tool.
 .SH REQUIREMENTS
 FTRACE CONFIG, and the tracepoints block:block_rq_issue and
 block:block_rq_complete. You may already have these enabled and available on
-recent Linux kernels.
-.PP
+recent Linux kernels. Also, awk.
 .SH OPTIONS
 .TP
 \-d secs
@@ -48,23 +47,19 @@ Include a column for the start time (issue time) of the I/O, in seconds.
 .TP
 \-t
 Include a column for the completion time of the I/O, in seconds.
-.PP
 .SH EXAMPLES
 .TP
 Default output, print I/O activity as it occurs:
 # 
 .B iosnoop
-.PP
 .TP
 Buffer for 5 seconds (lower overhead) and write to a file:
 # 
 .B iosnoop \-d 5 > outfile
-.PP
 .TP
 Trace I/O issued when PID 181 was on-CPU only:
 #
 .B iosnoop \-p 181
-.PP
 .SH FIELDS
 .TP
 COMM
@@ -91,7 +86,6 @@ Size of the I/O, in bytes.
 .TP
 LATms
 Latency (time) for the I/O, in milliseconds.
-.PP
 .SH OVERHEAD
 By default, iosnoop works without buffering, printing I/O events
 as they happen (uses trace_pipe), context switching and consuming CPU to do
@@ -105,10 +99,9 @@ post-filtered, so all events are traced.
 The overhead may be acceptable in many situations. If it isn't, this tool
 can be reimplemented in C, or using a different tracer (eg, perf_events,
 SystemTap, ktap.)
-.PP
 .SH SOURCE
 This is from the perf-tools collection.
-.PP
+.IP
 https://github.com/brendangregg/perf-tools
 .PP
 Also look under the examples directory for a text file containing example

@@ -6,7 +6,7 @@ funccount \- count kernel function calls matching specified wildcards. Uses Linu
 [\-hT] [\-i secs] [\-d sec-] [\-t top] funcstring
 .SH DESCRIPTION
 This tool is a quick way to determine which kernel functions are being called,
-and at what rate. It uses ftrace capabilities that were available by Linux 3.2.
+and at what rate. It uses ftrace function profiling capabilities.
 
 WARNING: This uses dynamic tracing of (what can be many) kernel functions,
 and could cause kernel panics or freezes. Test, and know what you are doing,
