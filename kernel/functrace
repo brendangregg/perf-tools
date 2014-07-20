@@ -75,7 +75,7 @@ function usage {
 	        functrace -p 198 'vfs*'  # trace "vfs*" funcs for PID 198
 	        functrace 'tcp*' > out   # trace all "tcp*" funcs to out file
 	        functrace -d 1 'tcp*' > out  # trace 1 sec, then write out file
-	END
+END
 	exit
 }
 
