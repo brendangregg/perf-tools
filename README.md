@@ -23,7 +23,7 @@ Using ftrace:
 
 ## Prerequisites
 
-The intent is as few as possible. Eg, a Linux 3.2 server without debuginfo. See the tool man page for specific prerequisites.
+The intent is as few as possible. Eg, a Linux 3.2 server without debuginfo. See the tool man page for specifics.
 
 ### perf_events
 
