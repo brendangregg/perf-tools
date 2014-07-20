@@ -1,0 +1,60 @@
+Tracing all kernel functions that start with "bio_" (which would be block
+interface functions), and counting how many times they were executed until
+Ctrl-C is hit:
+
+# ./funccount 'bio_*'
+Tracing "bio_*"... Ctrl-C to end.
+^C
+FUNC                              COUNT
+bio_attempt_back_merge               26
+bio_get_nr_vecs                     361
+bio_alloc                           536
+bio_alloc_bioset                    536
+bio_endio                           536
+bio_free                            536
+bio_fs_destructor                   536
+bio_init                            536
+bio_integrity_enabled               536
+bio_put                             729
+bio_add_page                       1004
+
+Note that these counts are performed in-kernel context, using the ftrace
+function profiler, which means this is a (relatively) low overhead technique.
+Test yourself to quantify overhead.
+
+
+As was demonstrated here, wildcards can be used. Individual functions can also
+be specified. For example, all of the following are valid arguments:
+
+	bio_init
+	bio_*
+	*bio*
+
+The full list of what can be traced is in:
+/sys/kernel/debug/tracing/available_filter_functions, which can be grep'd to
+check what is there. Note that grep uses regular expressions, whereas
+funccount uses globbing for wildcards.
+
+
+Counting all "tcp_" kernel functions, and printing a summary every one second:
+
+# ./funccount -i 1 -t 5 'tcp_*'
+Tracing "tcp_*". Top 5 only... Ctrl-C to end.
+
+FUNC                              COUNT
+tcp_cleanup_rbuf                    386
+tcp_service_net_dma                 386
+tcp_established_options             549
+tcp_v4_md5_lookup                   560
+tcp_v4_md5_do_lookup                890
+
+FUNC                              COUNT
+tcp_service_net_dma                 498
+tcp_cleanup_rbuf                    499
+tcp_established_options             664
+tcp_v4_md5_lookup                   672
+tcp_v4_md5_do_lookup               1071
+
+[...]
+
+Neat.

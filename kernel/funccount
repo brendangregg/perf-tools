@@ -3,8 +3,8 @@
 # funccount - count kernel function calls matching specified wildcards.
 #             Uses Linux ftrace.
 #
-# This is a proof of concept using Linux ftrace capabilities circa Linux 3.2,
-# and works by using function profiling: in-kernel counters.
+# This is a proof of concept using Linux ftrace capabilities available by
+# Linux 3.2, and works by using function profiling: in-kernel counters.
 #
 # USAGE: funccount [-hT] [-i secs] [-d secs] [-t top] funcstring
 #    eg,
