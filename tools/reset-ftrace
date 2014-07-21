@@ -6,7 +6,7 @@
 # This may only be of use to ftrace hackers who, in the process of developing
 # ftrace software, often get the subsystem into a partially active state, and
 # would like a quick way to reset state. Check the end of this script for the
-# actualy files reset, and add more if you need.
+# actually files reset, and add more if you need.
 #
 # USAGE: ./reset-ftrace [-fhq]
 #
