@@ -3,7 +3,7 @@
 funccount \- count kernel function calls matching specified wildcards. Uses Linux ftrace.
 .SH SYNOPSIS
 .B funccount
-[\-hT] [\-i secs] [\-d sec-] [\-t top] funcstring
+[\-hT] [\-i secs] [\-d secs] [\-t top] funcstring
 .SH DESCRIPTION
 This tool is a quick way to determine which kernel functions are being called,
 and at what rate. It uses ftrace function profiling capabilities.
@@ -31,6 +31,10 @@ Print top number of entries only.
 .TP
 \-T
 Include timestamp on each summary.
+.TP
+funcstring
+A function name to trace, which may include file glob style wildcards. Eg,
+"vfs*" means match "vfs" followed by anything.
 .SH EXAMPLES
 .TP
 Count every kernel function beginning with "bio_", until Ctrl-C is hit:
@@ -68,4 +72,4 @@ Unstable - in development.
 .SH AUTHOR
 Brendan Gregg
 .SH SEE ALSO
-functrace(1)
+functrace(8)
