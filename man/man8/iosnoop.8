@@ -16,8 +16,8 @@ event-by-event for debugging disk and controller I/O scheduling issues.
 Since this uses ftrace, only the root user can use this tool.
 .SH REQUIREMENTS
 FTRACE CONFIG, and the tracepoints block:block_rq_issue and
-block:block_rq_complete. You may already have these enabled and available on
-recent Linux kernels. Also, awk.
+block:block_rq_complete, which you may already have enabled and available on
+recent Linux kernels. And awk.
 .SH OPTIONS
 .TP
 \-d secs

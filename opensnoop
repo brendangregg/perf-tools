@@ -17,7 +17,7 @@
 #
 # Run "opensnoop -h" for full usage.
 #
-# REQUIREMENTS: FTRACE and KPROBE CONFIG, syscalls:sys_enter_open tracepoint,
+# REQUIREMENTS: FTRACE and KPROBE CONFIG, syscalls:sys_exit_open tracepoint,
 # getname() kernel function (you may already have these on recent kernels),
 # and awk.
 #
@@ -174,7 +174,7 @@ fi
 if ! echo 1 > events/syscalls/sys_exit_open/enable; then
 	edie "ERROR: enabling open() exit tracepoint. Exiting."
 fi
-(( opt_time )) && printf "%-16s " "STARTs"
+(( opt_time )) && printf "%-16s " "TIMEs"
 printf "%-16.16s %-6s %4s %s\n" "COMM" "PID" "FD" "FILE"
 
 #
