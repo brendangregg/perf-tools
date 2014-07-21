@@ -43,8 +43,9 @@ Print column headers.
 Only trace kernel functions when this process ID is on-CPU.
 .TP
 funcstring
-A function name to trace, which may include file glob style wildcards. Eg,
-"vfs*" means match "vfs" followed by anything.
+A function name to trace, which may include file glob style wildcards ("*") at
+the beginning or ending of a string only. Eg, "vfs*" means match "vfs" followed
+by anything.
 .SH EXAMPLES
 .TP
 Trace calls to do_nanosleep():

@@ -33,8 +33,9 @@ Print top number of entries only.
 Include timestamp on each summary.
 .TP
 funcstring
-A function name to trace, which may include file glob style wildcards. Eg,
-"vfs*" means match "vfs" followed by anything.
+A function name to trace, which may include file glob style wildcards ("*") at
+the beginning or ending of a string only. Eg, "vfs*" means match "vfs" followed
+by anything.
 .SH EXAMPLES
 .TP
 Count every kernel function beginning with "bio_", until Ctrl-C is hit:

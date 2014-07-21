@@ -30,7 +30,10 @@ be specified. For example, all of the following are valid arguments:
 
 	bio_init
 	bio_*
+	*init
 	*bio*
+
+A "*" within a string (eg, "bio*init") is not supported.
 
 The full list of what can be traced is in:
 /sys/kernel/debug/tracing/available_filter_functions, which can be grep'd to
