@@ -16,6 +16,7 @@ Using perf_events:
 Using ftrace:
 
 - [iosnoop](iosnoop): trace disk I/O with details including latency. [Examples](examples/iosnoop_example.txt).
+- [iolatency](iolatency): summarize disk I/O latency as a histogram. [Examples](examples/iolatency_example.txt).
 - [execsnoop](execsnoop): trace process exec() with command line argument details. [Examples](examples/execsnoop_example.txt).
 - [opensnoop](opensnoop): trace open() syscalls showing filenames. [Examples](examples/opensnoop_example.txt).
 - kernel/[funccount](kernel/funccount): count kernel functions that match a string. [Examples](examples/funccount_example.txt).
