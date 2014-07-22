@@ -8,7 +8,7 @@
 # devices and their resulting performance. I/O completions can also be studied
 # event-by-event for debugging disk and controller I/O scheduling issues.
 #
-# USAGE: ./iosnoop [-hst] [-d secs] [-p pid] [-n name]
+# USAGE: ./iosnoop [-hst] [-d device] [-i iotype] [-p pid] [-n name] [duration]
 #
 # REQUIREMENTS: FTRACE CONFIG, block:block_rq_* tracepoints (you may
 # already have these on recent kernels).
@@ -55,21 +55,25 @@ tracing=/sys/kernel/debug/tracing
 flock=/var/tmp/.ftrace-lock
 bufsize_kb=4096
 opt_duration=0; duration=; opt_name=0; name=; opt_pid=0; pid=; ftext=
-opt_start=0; opt_end=0
+opt_start=0; opt_end=0; opt_device=0; device=; opt_iotype=0; iotype=
 trap ':' INT QUIT TERM PIPE	# sends execution to end tracing section
 
 function usage {
 	cat <<-END >&2
-	USAGE: iosnoop [-hst] [-d secs] [-p PID] [-n name]
-	                 -d seconds      # trace duration, and use buffers
+	USAGE: iosnoop [-hst] [-d device] [-i iotype] [-p PID] [-n name]
+	               [duration]
+	                 -d device       # device string (eg, "202,1)
+	                 -i iotype       # match type (eg, '*R*' for all reads)
 	                 -n name         # process name to match on I/O issue
 	                 -p PID          # PID to match on I/O issue
 	                 -s              # include start time of I/O (s)
 	                 -t              # include completion time of I/O (s)
 	                 -h              # this usage message
+	                 duration        # duration seconds, and use buffers
 	  eg,
 	        iosnoop                  # watch block I/O live (unbuffered)
-	        iosnoop -d 1             # trace 1 sec (buffered)
+	        iosnoop 1                # trace 1 sec (buffered)
+	        iosnoop -i '*R*'         # trace reads
 	        iosnoop -p 181           # trace I/O issued by PID 181 only
 END
 	exit
@@ -81,21 +85,40 @@ function warn {
 	fi
 }
 
+function end {
+	# disable tracing
+	echo 2>/dev/null
+	echo "Ending tracing..." 2>/dev/null
+	cd $tracing
+	warn "echo 0 > events/block/block_rq_issue/enable"
+	warn "echo 0 > events/block/block_rq_complete/enable"
+	if (( opt_device || opt_iotype || opt_pid )); then
+		warn "echo 0 > events/block/block_rq_issue/filter"
+		warn "echo 0 > events/block/block_rq_complete/filter"
+	fi
+	warn "echo > trace"
+	(( wroteflock )) && warn "rm $flock"
+}
+
 function die {
 	echo >&2 "$@"
 	exit 1
 }
 
-function ldie {
-	[[ -e $flock ]] && rm $flock
-	die "$@"
+function edie {
+	# die with a quiet end()
+	echo >&2 "$@"
+	exec >/dev/null 2>&1
+	end
+	exit 1
 }
 
 ### process options
-while getopts d:hn:p:st opt
+while getopts d:hi:n:p:st opt
 do
 	case $opt in
-	d)	opt_duration=1; duration=$OPTARG ;;
+	d)	opt_device=1; device=$OPTARG ;;
+	i)	opt_iotype=1; iotype=$OPTARG ;;
 	n)	opt_name=1; name=$OPTARG ;;
 	p)	opt_pid=1; pid=$OPTARG ;;
 	s)	opt_start=1 ;;
@@ -104,6 +127,16 @@ do
 	esac
 done
 shift $(( $OPTIND - 1 ))
+if (( $# )); then
+	opt_duration=1
+	duration=$1
+	shift
+fi
+if (( opt_device )); then
+	major=${device%,*}
+	minor=${device#*,}
+	dev=$(( (major << 20) + minor ))
+fi
 
 ### option logic
 (( opt_pid && opt_name )) && die "ERROR: use either -p or -n."
@@ -115,26 +148,46 @@ else
 	echo "Tracing block I/O$ftext. Ctrl-C to end."
 fi
 
+### select awk
+(( opt_duration )) && use=mawk || use=gawk	# workaround for mawk fflush()
+[[ -x /usr/bin/$use ]] && awk=$use || awk=awk
+wroteflock=1
+
+### check permissions
+cd $tracing || die "ERROR: accessing tracing. Root user? Kernel has FTRACE?
+    debugfs mounted? (mount -t debugfs debugfs /sys/kernel/debug)"
+
 ### ftrace lock
 [[ -e $flock ]] && die "ERROR: ftrace may be in use by PID $(cat $flock) $flock"
 echo $$ > $flock || die "ERROR: unable to write $flock."
 
-### select awk
-(( opt_duration )) && use=mawk || use=gawk	# workaround for mawk fflush()
-[[ -x /usr/bin/$use ]] && awk=$use || awk=awk
-
 ### setup and begin tracing
-cd $tracing || ldie "ERROR: accessing tracing. Root user? Kernel has FTRACE?"
 echo nop > current_tracer
 warn "echo $bufsize_kb > buffer_size_kb"
+filter=
+if (( opt_iotype )); then
+	filter="rwbs ~ \"$iotype\""
+fi
+if (( opt_device )); then
+	[[ "$filter" != "" ]] && filter="$filter && "
+	filter="${filter}dev == $dev"
+fi
+filter_i=$filter
 if (( opt_pid )); then
-	if ! echo "common_pid==$pid" > events/block/block_rq_issue/filter; then
-	    ldie "ERROR: setting -p $pid. Exiting."
+	[[ "$filter_i" != "" ]] && filter_i="$filter_i && "
+	filter_i="${filter_i}common_pid == $pid"
+	[[ "$filter" == "" ]] && filter=0
+fi
+if (( opt_iotype || opt_device || opt_pid )); then
+	if ! echo "$filter_i" > events/block/block_rq_issue/filter || \
+	    ! echo "$filter" > events/block/block_rq_complete/filter
+	then
+		edie "ERROR: setting -d or -t filter. Exiting."
 	fi
 fi
 if ! echo 1 > events/block/block_rq_issue/enable || \
     ! echo 1 > events/block/block_rq_complete/enable; then
-	ldie "ERROR: enabling block I/O tracepoints. Exiting."
+	edie "ERROR: enabling block I/O tracepoints. Exiting."
 fi
 (( opt_start )) && printf "%-14s " "STARTs"
 (( opt_end )) && printf "%-14s " "ENDs"
@@ -224,13 +277,4 @@ fi ) | $awk -v o=$offset -v opt_name=$opt_name -v name=$name \
 '
 
 ### end tracing
-echo 2>/dev/null
-echo "Ending tracing..." 2>/dev/null
-if ! echo 0 > events/block/block_rq_issue/enable || \
-    ! echo 0 > events/block/block_rq_complete/enable; then
-	echo >&2 "ERROR: disabling block I/O tracepoints."
-	exit 1
-fi
-(( opt_pid )) && warn "echo 0 > events/block/block_rq_issue/filter"
-warn "echo > trace"
-warn "rm $flock"
+end

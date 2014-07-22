@@ -127,13 +127,13 @@ There is also a "-n" option to match on process names, however, that currently
 does so in user space, so is less efficient.
 
 
-If I want to capture events for post-processing, I use the "-d secs" mode, which
+If I want to capture events for post-processing, I use the duration mode, which
 not only lets me set the duration, but also uses buffering, which reduces the
 overheads of tracing.
 
 Capturing 5 seconds, with both start timestamps (-s) and end timestamps (-t):
 
-# time ./iosnoop -ts -d 5 > out
+# time ./iosnoop -ts 5 > out
 
 real	0m5.566s
 user	0m0.336s
@@ -148,7 +148,7 @@ followed by the CPU time for iosnoop to fetch and process the buffer.
 
 Now tracing for 30 seconds:
 
-# time ./iosnoop -ts -d 30 > out
+# time ./iosnoop -ts 30 > out
 
 real	0m31.207s
 user	0m0.884s
@@ -161,7 +161,7 @@ but only has 64k. The tracing buffer has overflowed, and events have been
 dropped. If I really must capture this many events, I can either increase
 the trace buffer size (it's the bufsize_kb setting in the script), or, use
 a different tracer (perf_evets, SystemTap, ktap, etc.) If the IOPS rate is low
-(eg, less than 5k), then unbuffered (no -d) mode, despite the higher overheads,
+(eg, less than 5k), then unbuffered (no duration), despite the higher overheads,
 may be sufficient, and will keep capturing events until Ctrl-C.
 
 
