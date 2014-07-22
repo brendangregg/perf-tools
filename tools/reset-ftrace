@@ -47,7 +47,7 @@ function usage {
 	                 -q              # quiet: reset, but say nothing
 	                 -h              # this usage message
 	  eg,
-	        reset-ftrace             # disable active ftrace session
+	       reset-ftrace              # disable active ftrace session
 END
 	exit
 }

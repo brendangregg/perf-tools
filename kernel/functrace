@@ -70,11 +70,11 @@ function usage {
 	                 -H              # include column headers
 	                 -p PID          # trace when this pid is on-CPU
 	  eg,
-	        functrace do_nanosleep   # trace the do_nanosleep() function
-	        functrace '*sleep'       # trace functions ending in "sleep"
-	        functrace -p 198 'vfs*'  # trace "vfs*" funcs for PID 198
-	        functrace 'tcp*' > out   # trace all "tcp*" funcs to out file
-	        functrace -d 1 'tcp*' > out  # trace 1 sec, then write out file
+	       functrace do_nanosleep    # trace the do_nanosleep() function
+	       functrace '*sleep'        # trace functions ending in "sleep"
+	       functrace -p 198 'vfs*'   # trace "vfs*" funcs for PID 198
+	       functrace 'tcp*' > out    # trace all "tcp*" funcs to out file
+	       functrace -d 1 'tcp*' > out  # trace 1 sec, then write out file
 END
 	exit
 }

@@ -71,10 +71,10 @@ function usage {
 	                 -h              # this usage message
 	                 duration        # duration seconds, and use buffers
 	  eg,
-	        iosnoop                  # watch block I/O live (unbuffered)
-	        iosnoop 1                # trace 1 sec (buffered)
-	        iosnoop -i '*R*'         # trace reads
-	        iosnoop -p 181           # trace I/O issued by PID 181 only
+	       iosnoop                   # watch block I/O live (unbuffered)
+	       iosnoop 1                 # trace 1 sec (buffered)
+	       iosnoop -i '*R*'          # trace reads
+	       iosnoop -p 181            # trace I/O issued by PID 181 only
 END
 	exit
 }

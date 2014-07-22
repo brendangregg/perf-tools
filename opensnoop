@@ -63,10 +63,10 @@ function usage {
 	                 -x              # only show failed opens
 	                 -h              # this usage message
 	  eg,
-	        opensnoop                # watch open()s live (unbuffered)
-	        opensnoop -d 1           # trace 1 sec (buffered)
-	        opensnoop -f conf        # trace filenames containing "conf"
-	        opensnoop -p 181         # trace I/O issued by PID 181 only
+	       opensnoop                 # watch open()s live (unbuffered)
+	       opensnoop -d 1            # trace 1 sec (buffered)
+	       opensnoop -f conf         # trace filenames containing "conf"
+	       opensnoop -p 181          # trace I/O issued by PID 181 only
 END
 	exit
 }

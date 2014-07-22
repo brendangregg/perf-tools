@@ -52,11 +52,11 @@ function usage {
 	                 -t top          # show top num entries only
 	                 -T              # include timestamp (for -i)
 	  eg,
-	        funccount 'vfs*'         # trace all funcs that match "vfs*"
-	        funccount -d 5 'tcp*'    # trace "tcp*" funcs for 5 seconds
-	        funccount -t 10 'ext3*'  # show top 10 "ext3*" funcs
-	        funccount -i 1 'ext3*'   # summary every 1 second
-	        funccount -i 1 -d 5 'ext3*' # 5 x 1 second summaries
+	       funccount 'vfs*'          # trace all funcs that match "vfs*"
+	       funccount -d 5 'tcp*'     # trace "tcp*" funcs for 5 seconds
+	       funccount -t 10 'ext3*'   # show top 10 "ext3*" funcs
+	       funccount -i 1 'ext3*'    # summary every 1 second
+	       funccount -i 1 -d 5 'ext3*' # 5 x 1 second summaries
 END
 	exit
 }

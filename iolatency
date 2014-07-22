@@ -57,10 +57,10 @@ function usage {
 	                 interval        # summary interval, seconds (default 1)
 	                 count           # number of summaries
 	  eg,
-	        iolatency                # summarize latency every second
-	        iolatency 5 2            # 2 x 5 second summaries
-	        iolatency -i '*R*'       # trace reads
-	        iolatency -d 202,1       # trace device 202,1 only
+	       iolatency                 # summarize latency every second
+	       iolatency 5 2             # 2 x 5 second summaries
+	       iolatency -i '*R*'        # trace reads
+	       iolatency -d 202,1        # trace device 202,1 only
 END
 	exit
 }
