@@ -16,7 +16,7 @@
 # OVERHEAD: By default, iosnoop works without buffering, printing I/O events
 # as they happen (uses trace_pipe), context switching and consuming CPU to do
 # so. This has a limit of about 10,000 IOPS (depending on your platform), at
-# which point iosnoop will be consuming 1 CPU. The "-d secs" mode uses buffering,
+# which point iosnoop will be consuming 1 CPU. The duration mode uses buffering,
 # and can handle much higher IOPS rates, however, the buffer has a limit of
 # about 50,000 I/O, after which events will be dropped. You can tune this with
 # bufsize_kb, which is per-CPU. Also note that the "-n" option is currently

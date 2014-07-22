@@ -192,6 +192,7 @@ while (( !opt_count || (i < count) )); do
 		echo > trace
 	fi
 
+	# mawk lacks strftime(), so do this in bash
 	(( opt_timestamp )) && printf "time %(%H:%M:%S)T:\n" -1
 	echo "tick"
 done | \
