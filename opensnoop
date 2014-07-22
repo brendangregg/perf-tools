@@ -142,7 +142,8 @@ fi
 [[ -x /usr/bin/$use ]] && awk=$use || awk=awk
 
 ### check permissions
-cd $tracing || die "ERROR: accessing tracing. Root user? Kernel has FTRACE?"
+cd $tracing || die "ERROR: accessing tracing. Root user? Kernel has FTRACE?
+    debugfs mounted? (mount -t debugfs debugfs /sys/kernel/debug)"
 
 ### ftrace lock
 [[ -e $flock ]] && die "ERROR: ftrace may be in use by PID $(cat $flock) $flock"
