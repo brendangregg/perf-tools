@@ -85,14 +85,29 @@ function warn {
 	fi
 }
 
+function end {
+	# disable tracing
+	echo 2>/dev/null
+	echo "Ending tracing..." 2>/dev/null
+	cd $tracing
+	warn "echo nop > current_tracer"
+	(( opt_pid )) && warn "echo > set_ftrace_pid"
+	warn "echo > set_ftrace_filter"
+	warn "echo > trace"
+	(( wroteflock )) && warn "rm $flock"
+}
+
 function die {
 	echo >&2 "$@"
 	exit 1
 }
 
-function ldie {
-	[[ -e $flock ]] && rm $flock
-	die "$@"
+function edie {
+	# die with a quiet end()
+	echo >&2 "$@"
+	exec >/dev/null 2>&1
+	end
+	exit 1
 }
 
 ### process options
@@ -117,31 +132,32 @@ else
 	echo "Tracing \"$funcs\"$pidtext... Ctrl-C to end."
 fi
 
+### check permissions
+cd $tracing || die "ERROR: accessing tracing. Root user? Kernel has FTRACE?
+    debugfs mounted? (mount -t debugfs debugfs /sys/kernel/debug)"
+
 ### ftrace lock
 [[ -e $flock ]] && die "ERROR: ftrace may be in use by PID $(cat $flock) $flock"
 echo $$ > $flock || die "ERROR: unable to write $flock."
+wroteflock=1
 
 ### setup and commence tracing
-if ! cd $tracing; then
-	ldie "ERROR: accessing tracing. Root user? Kernel has FTRACE?"
-fi
 sysctl -q kernel.ftrace_enabled=1	# doesn't set exit status
 read mode < current_tracer
-[[ "$mode" != "nop" ]] && ldie "ERROR: ftrace active (current_tracer=$mode)"
+[[ "$mode" != "nop" ]] && edie "ERROR: ftrace active (current_tracer=$mode)"
 if (( opt_pid )); then
 	if ! echo $pid > set_ftrace_pid; then
-		ldie "ERROR: setting -p $pid (PID exist?). Exiting."
+		edie "ERROR: setting -p $pid (PID exist?). Exiting."
 	fi
 fi
 if ! echo "$funcs" > set_ftrace_filter; then
-	ldie "ERROR: enabling \"$funcs\". Exiting."
+	edie "ERROR: enabling \"$funcs\". Exiting."
 fi
 if ! echo function > current_tracer; then
-	ldie "ERROR: setting current_tracer to \"function\". Exiting."
+	edie "ERROR: setting current_tracer to \"function\". Exiting."
 fi
 
 ### print trace buffer
-end=0; secs=0
 warn "echo > trace"
 if (( opt_duration )); then
 	sleep $duration
@@ -157,10 +173,4 @@ else
 fi
 
 ### end tracing
-echo 2>/dev/null
-echo "Ending tracing..." 2>/dev/null
-warn "echo nop > current_tracer"
-(( opt_pid )) && warn "echo > set_ftrace_pid"
-warn "echo > set_ftrace_filter"
-warn "echo > trace"
-warn "rm $flock"
+end

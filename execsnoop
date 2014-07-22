@@ -88,6 +88,10 @@ sub writeto {
 	close FILE or return 0;
 }
 
+### check permissions
+chdir "$tracing" or ldie "ERROR: accessing tracing. Root? Kernel has FTRACE?" .
+    "\ndebugfs mounted? (mount -t debugfs debugfs /sys/kernel/debug)";
+
 ### ftrace lock
 if (-e $flock) {
 	open FLOCK, $flock; my $fpid = <FLOCK>; chomp $fpid; close FLOCK;
@@ -96,7 +100,6 @@ if (-e $flock) {
 writeto "$$", $flock or die "ERROR: unable to write $flock.";
 
 ### setup and begin tracing
-chdir "$tracing" or ldie "ERROR: accessing tracing. Root? Kernel has FTRACE?";
 writeto "nop", "current_tracer" or ldie "ERROR: disabling current_tracer.";
 writeto "1", "events/$tpdir/enable" or ldie "ERROR: enabling tracepoint " .
     "\"$tptext\" (tracepoint missing in this kernel version?)";
