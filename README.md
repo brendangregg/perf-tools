@@ -21,6 +21,7 @@ Using ftrace:
 - [opensnoop](opensnoop): trace open() syscalls showing filenames. [Examples](examples/opensnoop_example.txt).
 - kernel/[funccount](kernel/funccount): count kernel functions that match a string. [Examples](examples/funccount_example.txt).
 - kernel/[functrace](kernel/functrace): trace kernel functions that match a string. [Examples](examples/functrace_example.txt).
+- kernel/[kprobe](kernel/kprobe): trace a given kprobe definition. [Examples](examples/kprobe_example.txt).
 - tools/[reset-ftrace](tools/reset-ftrace): reset ftrace state if needed. [Examples](examples/reset-ftrace_example.txt).
 
 ## Prerequisites

@@ -1,0 +1,168 @@
+Demonstrations of kprobe, the Linux ftrace version.
+
+This traces do_sys_open() returns, showing the return value:
+
+# ./kprobe 'r:myopen do_sys_open $retval'
+Tracing kprobe myopen. Ctrl-C to end.
+          kprobe-26386 [001] d... 6593278.858754: myopen: (SyS_open+0x1e/0x20 <- do_sys_open) arg1=0x3
+           <...>-26387 [001] d... 6593278.860043: myopen: (SyS_open+0x1e/0x20 <- do_sys_open) arg1=0x3
+           <...>-26387 [001] d... 6593278.860064: myopen: (SyS_open+0x1e/0x20 <- do_sys_open) arg1=0x3
+           <...>-26387 [001] d... 6593278.860433: myopen: (SyS_open+0x1e/0x20 <- do_sys_open) arg1=0x3
+           <...>-26387 [001] d... 6593278.860521: myopen: (SyS_open+0x1e/0x20 <- do_sys_open) arg1=0x3
+       supervise-1685  [001] d... 6593279.178806: myopen: (SyS_open+0x1e/0x20 <- do_sys_open) arg1=0x9
+       supervise-1689  [001] d... 6593279.228756: myopen: (SyS_open+0x1e/0x20 <- do_sys_open) arg1=0x9
+       supervise-1689  [001] d... 6593279.229106: myopen: (SyS_open+0x1e/0x20 <- do_sys_open) arg1=0x9
+       supervise-1688  [000] d... 6593279.229501: myopen: (SyS_open+0x1e/0x20 <- do_sys_open) arg1=0x9
+       supervise-1695  [000] d... 6593279.229944: myopen: (SyS_open+0x1e/0x20 <- do_sys_open) arg1=0x9
+       supervise-1685  [001] d... 6593279.230104: myopen: (SyS_open+0x1e/0x20 <- do_sys_open) arg1=0x9
+       supervise-1687  [001] d... 6593279.230293: myopen: (SyS_open+0x1e/0x20 <- do_sys_open) arg1=0x9
+       supervise-1699  [000] d... 6593279.230381: myopen: (SyS_open+0x1e/0x20 <- do_sys_open) arg1=0x9
+       supervise-1692  [000] d... 6593279.230825: myopen: (SyS_open+0x1e/0x20 <- do_sys_open) arg1=0x9
+       supervise-1698  [000] d... 6593279.230915: myopen: (SyS_open+0x1e/0x20 <- do_sys_open) arg1=0x9
+       supervise-1698  [000] d... 6593279.231277: myopen: (SyS_open+0x1e/0x20 <- do_sys_open) arg1=0x9
+       supervise-1690  [000] d... 6593279.231703: myopen: (SyS_open+0x1e/0x20 <- do_sys_open) arg1=0x9
+^C
+Ending tracing...
+
+The syntax for the kprobe definition is the same as can be written to the
+/sys/kernel/debug/tracing/kprobe_events file, and is documented in the Linux
+kernel source under Documentation/trace/kprobetrace.txt.
+
+This example probe was named "myopen" (which is arbitrary). You can also provide
+arbitrary names for arguments. Eg:
+
+# ./kprobe 'r:myopen do_sys_open rval=$retval'
+Tracing kprobe myopen. Ctrl-C to end.
+          kprobe-27454 [001] d... 6593356.250019: myopen: (SyS_open+0x1e/0x20 <- do_sys_open) rval=0x3
+           <...>-27455 [001] d... 6593356.251280: myopen: (SyS_open+0x1e/0x20 <- do_sys_open) rval=0x3
+           <...>-27455 [001] d... 6593356.251301: myopen: (SyS_open+0x1e/0x20 <- do_sys_open) rval=0x3
+           <...>-27455 [001] d... 6593356.251672: myopen: (SyS_open+0x1e/0x20 <- do_sys_open) rval=0x3
+           <...>-27455 [001] d... 6593356.251769: myopen: (SyS_open+0x1e/0x20 <- do_sys_open) rval=0x3
+       supervise-1689  [000] d... 6593356.859758: myopen: (SyS_open+0x1e/0x20 <- do_sys_open) rval=0x9
+       supervise-1689  [000] d... 6593356.860143: myopen: (SyS_open+0x1e/0x20 <- do_sys_open) rval=0x9
+       supervise-1696  [000] d... 6593356.862682: myopen: (SyS_open+0x1e/0x20 <- do_sys_open) rval=0x9
+       supervise-1685  [001] d... 6593356.862684: myopen: (SyS_open+0x1e/0x20 <- do_sys_open) rval=0x9
+[...]
+
+That's a bit better.
+
+
+Tracing the open() mode:
+
+# ./kprobe 'p:myopen do_sys_open mode=%cx:u16'
+Tracing kprobe myopen. Ctrl-C to end.
+          kprobe-29572 [001] d... 6593503.353923: myopen: (do_sys_open+0x0/0x220) mode=0x1
+          kprobe-29572 [001] d... 6593503.353945: myopen: (do_sys_open+0x0/0x220) mode=0x0
+          kprobe-29572 [001] d... 6593503.354307: myopen: (do_sys_open+0x0/0x220) mode=0x5c00
+          kprobe-29572 [001] d... 6593503.354401: myopen: (do_sys_open+0x0/0x220) mode=0x0
+       supervise-1689  [000] d... 6593503.944125: myopen: (do_sys_open+0x0/0x220) mode=0x1a4
+       supervise-1688  [001] d... 6593503.944125: myopen: (do_sys_open+0x0/0x220) mode=0x1a4
+       supervise-1688  [001] d... 6593503.944606: myopen: (do_sys_open+0x0/0x220) mode=0x1a4
+       supervise-1689  [000] d... 6593503.944606: myopen: (do_sys_open+0x0/0x220) mode=0x1a4
+       supervise-1698  [000] d... 6593503.944728: myopen: (do_sys_open+0x0/0x220) mode=0x1a4
+       supervise-1698  [000] d... 6593503.945077: myopen: (do_sys_open+0x0/0x220) mode=0x1a4
+[...]
+
+Here I guessed that the mode was in register %cx, and cast it as a 16-bit
+unsigned integer (":u16"). Your platform and kernel may be different, and the
+mode may be in a different register. If fiddling with such registers becomes too
+painful or unreliable for you, consider installing kernel debuginfo and using
+the named variables with perf_events "perf probe".
+
+
+Tracing the open() filename:
+
+# ./kprobe 'p:myopen do_sys_open filename=+0(%si):string'
+Tracing kprobe myopen. Ctrl-C to end.
+          kprobe-32369 [001] d... 6593706.999728: myopen: (do_sys_open+0x0/0x220) filename="/etc/ld.so.cache"
+          kprobe-32369 [001] d... 6593706.999748: myopen: (do_sys_open+0x0/0x220) filename="/lib/x86_64-linux-gnu/libc.so.6"
+          kprobe-32369 [001] d... 6593707.000092: myopen: (do_sys_open+0x0/0x220) filename="/usr/lib/locale/locale-archive"
+          kprobe-32369 [001] d... 6593707.000176: myopen: (do_sys_open+0x0/0x220) filename="trace_pipe"
+       supervise-1699  [000] d... 6593707.254970: myopen: (do_sys_open+0x0/0x220) filename="supervise/status.new"
+       supervise-1689  [001] d... 6593707.254970: myopen: (do_sys_open+0x0/0x220) filename="supervise/status.new"
+       supervise-1689  [001] d... 6593707.255432: myopen: (do_sys_open+0x0/0x220) filename="supervise/status.new"
+       supervise-1699  [000] d... 6593707.255432: myopen: (do_sys_open+0x0/0x220) filename="supervise/status.new"
+       supervise-1695  [001] d... 6593707.258805: myopen: (do_sys_open+0x0/0x220) filename="supervise/status.new"
+[...]
+
+As mentioned previously, the %si register may be different on your platform.
+In this example, I cast it as a string.
+
+
+The -H option will show the headings:
+
+# ./kprobe -H 'p:myopen do_sys_open filename=+0(%si):string' 
+Tracing kprobe myopen. Ctrl-C to end.
+# tracer: nop
+#
+# entries-in-buffer/entries-written: 4/4   #P:2
+#
+#                              _-----=> irqs-off
+#                             / _----=> need-resched
+#                            | / _---=> hardirq/softirq
+#                            || / _--=> preempt-depth
+#                            ||| /     delay
+#           TASK-PID   CPU#  ||||    TIMESTAMP  FUNCTION
+#              | |       |   ||||       |         |
+          kprobe-1460  [001] d... 6593814.070876: myopen: (do_sys_open+0x0/0x220) filename="/etc/ld.so.cache"
+          kprobe-1460  [001] d... 6593814.070898: myopen: (do_sys_open+0x0/0x220) filename="/lib/x86_64-linux-gnu/libc.so.6"
+          kprobe-1460  [001] d... 6593814.071256: myopen: (do_sys_open+0x0/0x220) filename="/usr/lib/locale/locale-archive"
+          kprobe-1460  [001] d... 6593814.071355: myopen: (do_sys_open+0x0/0x220) filename="trace"
+          kprobe-1460  [001] d... 6593814.070876: myopen: (do_sys_open+0x0/0x220) filename="/etc/ld.so.cache"
+[...]
+
+
+Specifying a duration will buffer in-kernel (reducing overhead), and write at
+the end. Here's tracing for 10 seconds, and writing to the "out" file:
+
+# ./kprobe -d 10 'p:myopen do_sys_open filename=+0(%si):string' > out
+
+
+You can match on a single PID only:
+
+# ./kprobe -p 1696 'p:myopen do_sys_open filename=+0(%si):string' 
+Tracing kprobe myopen. Ctrl-C to end.
+       supervise-1696  [001] d... 6593773.677033: myopen: (do_sys_open+0x0/0x220) filename="supervise/status.new"
+       supervise-1696  [001] d... 6593773.677332: myopen: (do_sys_open+0x0/0x220) filename="supervise/status.new"
+       supervise-1696  [001] d... 6593774.697144: myopen: (do_sys_open+0x0/0x220) filename="supervise/status.new"
+       supervise-1696  [001] d... 6593774.697675: myopen: (do_sys_open+0x0/0x220) filename="supervise/status.new"
+       supervise-1696  [001] d... 6593775.717986: myopen: (do_sys_open+0x0/0x220) filename="supervise/status.new"
+       supervise-1696  [001] d... 6593775.718499: myopen: (do_sys_open+0x0/0x220) filename="supervise/status.new"
+^C
+Ending tracing...
+
+This will only show events when that PID is on-CPU.
+
+
+The -v option will show you the available variables you can use in custom
+filters:
+
+# ./kprobe -v 'p:myopen do_sys_open filename=+0(%si):string' 
+name: myopen
+ID: 1443
+format:
+	field:unsigned short common_type;	offset:0;	size:2;	signed:0;
+	field:unsigned char common_flags;	offset:2;	size:1;	signed:0;
+	field:unsigned char common_preempt_count;	offset:3;	size:1;	signed:0;
+	field:int common_pid;	offset:4;	size:4;	signed:1;
+
+	field:unsigned long __probe_ip;	offset:8;	size:8;	signed:0;
+	field:__data_loc char[] filename;	offset:16;	size:4;	signed:1;
+
+print fmt: "(%lx) filename=\"%s\"", REC->__probe_ip, __get_str(filename)
+
+
+Tracing filenames that end in "stat", by adding a filter:
+
+# ./kprobe 'p:myopen do_sys_open filename=+0(%si):string' 'filename ~ "*stat"'
+Tracing kprobe myopen. Ctrl-C to end.
+        postgres-1172  [000] d... 6594028.787166: myopen: (do_sys_open+0x0/0x220) filename="pg_stat_tmp/pgstat.stat"
+        postgres-1172  [001] d... 6594028.797410: myopen: (do_sys_open+0x0/0x220) filename="pg_stat_tmp/pgstat.stat"
+        postgres-1172  [001] d... 6594028.797467: myopen: (do_sys_open+0x0/0x220) filename="pg_stat_tmp/pgstat.stat"
+        postgres-4443  [001] d... 6594028.800908: myopen: (do_sys_open+0x0/0x220) filename="pg_stat_tmp/pgstat.stat"
+        postgres-4443  [000] d... 6594028.811237: myopen: (do_sys_open+0x0/0x220) filename="pg_stat_tmp/pgstat.stat"
+        postgres-4443  [000] d... 6594028.811290: myopen: (do_sys_open+0x0/0x220) filename="pg_stat_tmp/pgstat.stat"
+^C
+Ending tracing...
+
+This filtering is done in-kernel context.
