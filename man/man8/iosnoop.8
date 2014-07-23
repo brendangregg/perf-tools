@@ -3,7 +3,7 @@
 iosnoop \- trace block I/O events as they occur. Uses Linux ftrace.
 .SH SYNOPSIS
 .B iosnoop
-[\-hst] [\-d device] [\-i iotype] [\-p pid] [\-n name] [duration]
+[\-hQst] [\-d device] [\-i iotype] [\-p pid] [\-n name] [duration]
 .SH DESCRIPTION
 iosnoop prints block device I/O events as they happen, with useful details such
 as PID, device, I/O type, block number, I/O size, and latency.
@@ -19,8 +19,8 @@ section in OPTIONS.
 
 Since this uses ftrace, only the root user can use this tool.
 .SH REQUIREMENTS
-FTRACE CONFIG, and the tracepoints block:block_rq_issue and
-block:block_rq_complete, which you may already have enabled and available on
+FTRACE CONFIG, and the tracepoints block:block_rq_insert, block:block_rq_issue,
+and block:block_rq_complete, which you may already have enabled and available on
 recent Linux kernels. And awk.
 .SH OPTIONS
 .TP
@@ -46,8 +46,15 @@ filtered in user space. As with PID, this includes indirectly issued I/O.
 \-h
 Print usage message.
 .TP
+\-Q
+Use the queue insertion as the I/O start time (block:block_rq_insert), instead
+of the issue time (block:block_rq_issue). This affects the STARTs and LATms
+columns.
+.TP
 \-s
 Include a column for the start time (issue time) of the I/O, in seconds.
+If the \-Q option is used, this is the time the I/O is inserted on the block
+I/O queue.
 .TP
 \-t
 Include a column for the completion time of the I/O, in seconds.
@@ -79,9 +86,16 @@ Trace I/O issued to device 202,1 only:
 #
 .B iosnoop \-d 202,1
 .TP
-Include I/O issue and completion timestamps:
+Include I/O start and completion timestamps:
 #
 .B iosnoop \-ts
+.TP
+Include block I/O queueing time:
+#
+.B iosnoop \-Q
+Include I/O queueing and completion timestamps:
+#
+.B iosnop \-Qts
 .TP
 Trace I/O issued when PID 181 was on-CPU only:
 #

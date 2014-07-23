@@ -8,7 +8,7 @@
 # devices and their resulting performance. I/O completions can also be studied
 # event-by-event for debugging disk and controller I/O scheduling issues.
 #
-# USAGE: ./iosnoop [-hst] [-d device] [-i iotype] [-p pid] [-n name] [duration]
+# USAGE: ./iosnoop [-hQst] [-d device] [-i iotype] [-p pid] [-n name] [duration]
 #
 # REQUIREMENTS: FTRACE CONFIG, block:block_rq_* tracepoints (you may
 # already have these on recent kernels).
@@ -56,16 +56,18 @@ flock=/var/tmp/.ftrace-lock
 bufsize_kb=4096
 opt_duration=0; duration=; opt_name=0; name=; opt_pid=0; pid=; ftext=
 opt_start=0; opt_end=0; opt_device=0; device=; opt_iotype=0; iotype=
+opt_queue=0
 trap ':' INT QUIT TERM PIPE	# sends execution to end tracing section
 
 function usage {
 	cat <<-END >&2
-	USAGE: iosnoop [-hst] [-d device] [-i iotype] [-p PID] [-n name]
+	USAGE: iosnoop [-hQst] [-d device] [-i iotype] [-p PID] [-n name]
 	               [duration]
 	                 -d device       # device string (eg, "202,1)
 	                 -i iotype       # match type (eg, '*R*' for all reads)
 	                 -n name         # process name to match on I/O issue
 	                 -p PID          # PID to match on I/O issue
+	                 -Q              # use queue insert as start time
 	                 -s              # include start time of I/O (s)
 	                 -t              # include completion time of I/O (s)
 	                 -h              # this usage message
@@ -73,6 +75,8 @@ function usage {
 	  eg,
 	       iosnoop                   # watch block I/O live (unbuffered)
 	       iosnoop 1                 # trace 1 sec (buffered)
+	       iosnoop -Q                # include queueing time in LATms
+	       iosnoop -ts               # include start and end timestamps
 	       iosnoop -i '*R*'          # trace reads
 	       iosnoop -p 181            # trace I/O issued by PID 181 only
 END
@@ -90,10 +94,10 @@ function end {
 	echo 2>/dev/null
 	echo "Ending tracing..." 2>/dev/null
 	cd $tracing
-	warn "echo 0 > events/block/block_rq_issue/enable"
+	warn "echo 0 > events/block/$b_start/enable"
 	warn "echo 0 > events/block/block_rq_complete/enable"
 	if (( opt_device || opt_iotype || opt_pid )); then
-		warn "echo 0 > events/block/block_rq_issue/filter"
+		warn "echo 0 > events/block/$b_start/filter"
 		warn "echo 0 > events/block/block_rq_complete/filter"
 	fi
 	warn "echo > trace"
@@ -114,13 +118,14 @@ function edie {
 }
 
 ### process options
-while getopts d:hi:n:p:st opt
+while getopts d:hi:n:p:Qst opt
 do
 	case $opt in
 	d)	opt_device=1; device=$OPTARG ;;
 	i)	opt_iotype=1; iotype=$OPTARG ;;
 	n)	opt_name=1; name=$OPTARG ;;
 	p)	opt_pid=1; pid=$OPTARG ;;
+	Q)	opt_queue=1 ;;
 	s)	opt_start=1 ;;
 	t)	opt_end=1 ;;
 	h|?)	usage ;;
@@ -146,6 +151,11 @@ if (( opt_duration )); then
 	echo "Tracing block I/O$ftext for $duration seconds (buffered)..."
 else
 	echo "Tracing block I/O$ftext. Ctrl-C to end."
+fi
+if (( opt_queue )); then
+	b_start=block_rq_insert
+else
+	b_start=block_rq_issue
 fi
 
 ### select awk
@@ -179,13 +189,13 @@ if (( opt_pid )); then
 	[[ "$filter" == "" ]] && filter=0
 fi
 if (( opt_iotype || opt_device || opt_pid )); then
-	if ! echo "$filter_i" > events/block/block_rq_issue/filter || \
+	if ! echo "$filter_i" > events/block/$b_start/filter || \
 	    ! echo "$filter" > events/block/block_rq_complete/filter
 	then
 		edie "ERROR: setting -d or -t filter. Exiting."
 	fi
 fi
-if ! echo 1 > events/block/block_rq_issue/enable || \
+if ! echo 1 > events/block/$b_start/enable || \
     ! echo 1 > events/block/block_rq_complete/enable; then
 	edie "ERROR: enabling block I/O tracepoints. Exiting."
 fi
@@ -215,7 +225,8 @@ else
 	# print buffer live
 	cat trace_pipe
 fi ) | $awk -v o=$offset -v opt_name=$opt_name -v name=$name \
-    -v opt_duration=$opt_duration -v opt_start=$opt_start -v opt_end=$opt_end '
+    -v opt_duration=$opt_duration -v opt_start=$opt_start -v opt_end=$opt_end \
+    -v b_start=$b_start '
 	# common fields
 	$1 != "#" {
 		# task name can contain dashes
@@ -227,7 +238,7 @@ fi ) | $awk -v o=$offset -v opt_name=$opt_name -v name=$name \
 	}
 
 	# block I/O request
-	$1 != "#" && $0 ~ /rq_issue/ {
+	$1 != "#" && $0 ~ b_start {
 		if (opt_name && match(comm, name) == 0)
 			next
 		#
