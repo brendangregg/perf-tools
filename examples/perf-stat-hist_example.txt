@@ -73,3 +73,50 @@ Tracing syscalls:sys_exit_read, power-of-4, max 1048576, for 10 seconds...
       1048576 ->           : 0        |                                      |
 
 Most of our read()s were tiny, between 1 and 3 bytes.
+
+
+Using power-of-2, and a max of 1024:
+
+# ./perf-stat-hist -P 2 -m 1024 syscalls:sys_exit_read ret
+Tracing syscalls:sys_exit_read, power-of-2, max 1024, until Ctrl-C...
+^C
+            Range          : Count    Distribution
+              -> -1        : 29       |##                                    |
+            0 -> 0         : 1        |#                                     |
+            1 -> 1         : 959      |######################################|
+            2 -> 3         : 1        |#                                     |
+            4 -> 7         : 0        |                                      |
+            8 -> 15        : 2        |#                                     |
+           16 -> 31        : 14       |#                                     |
+           32 -> 63        : 1        |#                                     |
+           64 -> 127       : 0        |                                      |
+          128 -> 255       : 0        |                                      |
+          256 -> 511       : 0        |                                      |
+          512 -> 1023      : 1        |#                                     |
+         1024 ->           : 1        |#                                     |
+
+
+Specifying custom bucket sizes:
+
+# ./perf-stat-hist -b "10 50 100 5000" syscalls:sys_exit_read ret
+Tracing syscalls:sys_exit_read, specified buckets, until Ctrl-C...
+^C
+            Range          : Count    Distribution
+              -> 9         : 989      |######################################|
+           10 -> 49        : 5        |#                                     |
+           50 -> 99        : 0        |                                      |
+          100 -> 4999      : 2        |#                                     |
+         5000 ->           : 0        |                                      |
+
+
+Specifying a single value to bifurcate statistics:
+
+# ./perf-stat-hist -b 10 syscalls:sys_exit_read ret
+Tracing syscalls:sys_exit_read, specified buckets, until Ctrl-C...
+^C
+            Range          : Count    Distribution
+              -> 9         : 2959     |######################################|
+           10 ->           : 7        |#                                     |
+
+This has the lowest overhead for collection, since only two tracepoint 
+filter pairs are used.

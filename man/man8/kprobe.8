@@ -75,7 +75,7 @@ Trace do_sys_open() with filename string:
 .TP
 Trace do_sys_open() for filenames ending in "stat"
 #
-.B kprobe 'p:myopen do_sys_open fn=+0(%si):string' 'fn ~ "*stat"'
+.B kprobe 'p:myopen do_sys_open fn=+0(%si):string' 'fn ~ """*stat"""'
 .SH FIELDS
 The output format depends on the kernel version, and headings can be printed
 using \-H. The format is the same as the ftrace function trace format, described

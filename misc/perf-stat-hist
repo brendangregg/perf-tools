@@ -5,7 +5,8 @@
 # This is a proof-of-concept showing in-kernel histograms using Linux
 # perf_events (aka the "perf" command).
 #
-# USAGE: ./perf-stat-hist tracepoint variable [seconds]
+# USAGE: perf-stat-hist [-h] [-b buckets|-P power] [-m max] tracepoint
+#        variable [seconds]
 #    eg,
 #        ./perf-stat-hist syscalls:sys_enter_read count 10  
 #
@@ -38,50 +39,117 @@
 #
 # 30-Jun-2014	Brendan Gregg	Created this.
 
-if (( $# < 2 )); then
-	echo "USAGE: $0 tracepoint variable [seconds]"
-	echo "   eg,"
-	echo "       $0 syscalls:sys_enter_read count 10"
-	exit
-fi
+opt_buckets=0; opt_power=0; power=4; opt_max=0; max=$((1024 * 1024))
+duration=0; debug=0
+trap ':' INT QUIT TERM PIPE
 
+function usage {
+	cat <<-END >&2
+	USAGE: perf-stat-hist [-h] [-b buckets|-P power] [-m max] tracepoint
+	                      variable [seconds]
+	                 -b buckets      # specify histogram bucket points
+	                 -P power        # power-of (default is 4)
+	                 -m max          # max value for power-of
+	                 -h              # this usage message
+	   eg,
+	       perf-stat-hist syscalls:sys_enter_read count 5
+	                 # read() request histogram, 5 seconds
+	       perf-stat-hist syscalls:sys_exit_read ret 5
+	                 # read() return histogram, 5 seconds
+	       perf-stat-hist -P 10 syscalls:sys_exit_read ret 5
+	                 # ... use power-of-10
+	       perf-stat-hist -P 2 -m 1024 syscalls:sys_exit_read ret 5
+	                 # ... use power-of-2, max 1024
+	       perf-stat-hist -b "10 50 100 500" syscalls:sys_exit_read ret 5
+	                 # ... histogram based on these bucket ranges
+	       perf-stat-hist -b 10 syscalls:sys_exit_read ret 5
+	                 # ... bifurcate by the value 10 (lowest overhead)
+END
+	exit
+}
+
+function die {
+	echo >&2 "$@"
+	exit 1
+}
+
+### process options
+while getopts b:hm:P: opt
+do
+	case $opt in
+	b)	opt_buckets=1; buckets=($OPTARG) ;;
+	P)	opt_power=1; power=$OPTARG ;;
+	m)	opt_max=1; max=$OPTARG ;;
+	h|?)	usage ;;
+	esac
+done
+shift $(( $OPTIND - 1 ))
+(( $# < 2 )) && usage
 tpoint=$1			# tracepoint
 var=$2				# variable for histogram
-duration=${3:-5}
+duration=${3}
 
-pow=4				# power-of for bucket size
-max=$(( 1024 * 1024 ))		# intended max bucket value
-debug=0
+### option logic
+(( opt_buckets && opt_power )) && die "ERROR: use either -b or -P"
+(( opt_power && power < 2 )) && die "ERROR: -P power must be 2 or higher"
 
 ### check that tracepoint exists
-if ! grep "^$tpoint\$" /sys/kernel/debug/tracing/available_events >/dev/null
+if ! grep "^$tpoint\$" /sys/kernel/debug/tracing/available_events > /dev/null
 then
 	echo >&2 "ERROR: tracepoint \"$tpoint\" not found. Exiting..."
 	[[ "$USER" != "root" ]] && echo >&2 "Not root user?"
-	exit
+	exit 1
+fi
+
+### auto build power-of buckets
+if (( !opt_buckets )); then
+	b=0
+	s=1;
+	while (( s <= max )); do
+		b="$b $s"
+		(( s *= power ))
+	done
+	buckets=($b)
 fi
 
 ### build list of tracepoints and filters for each histogram bucket
-tpoints=$(
-	echo ' -e' $tpoint --filter '"'$var' == 0"'
-	s=1;
-	while (( s < max )); do
-		echo ' -e' $tpoint --filter '"'$var' >= '$s' && '\
-		    $var' < '$((s * pow))'"'
-		(( s *= pow ))
-	done
-	echo ' -e' $tpoint --filter '"'$var' >= '$s'"'
-)
+max=${buckets[${#buckets[@]} - 1]}	# last element
+((max_i = ${#buckets[*]} - 1))
+tpoints=" -e $tpoint --filter \"$var < ${buckets[0]}\""
+awkarray=
+i=0;
+while (( i < max_i )); do
+	tpoints="$tpoints -e $tpoint --filter \"$var >= ${buckets[$i]} && "
+	tpoints="$tpoints $var < ${buckets[$i + 1]}\""
+	awkarray="$awkarray buckets[$i]=${buckets[$i]};"
+	(( i++ ))
+done
+awkarray="$awkarray buckets[$max_i]=${buckets[$max_i]};"
+tpoints="$tpoints -e $tpoint --filter \"$var >= ${buckets[$max_i]}\""
 
 if (( debug )); then
+	echo buckets: ${buckets[*]}
 	echo tracepoints: $tpoints
+	echo awkarray: ${awkarray[*]}
 fi
 
-echo "Tracing $tpoint, power-of-$pow, max $max, for $duration seconds..."
+### prepare to run
+if (( duration )); then
+	etext="for $duration seconds"
+	cmd="sleep $duration"
+else
+	etext="until Ctrl-C"
+	cmd="sleep 999999"
+fi
+if (( opt_buckets )); then
+	echo "Tracing $tpoint, specified buckets, $etext..."
+else
+	echo "Tracing $tpoint, power-of-$power, max $max, $etext..."
+fi
 
 ### run perf
 out="-o /dev/stdout"	# a workaround needed in linux 3.2; not by 3.4.15
-stat=$(eval perf stat $tpoints -a $out sleep $duration 2>&1)
+stat=$(eval perf stat $tpoints -a $out $cmd 2>&1)
 
 if (( $? != 0 )); then
 	echo >&2 "ERROR running perf:"
@@ -103,35 +171,38 @@ most=$(echo "$stat" | awk -v tpoint=$tpoint '
 
 ### process output
 echo
-echo "$stat" | awk -v tpoint=$tpoint -v max=$max -v pow=$pow -v most=$most '
+echo "$stat" | awk -v tpoint=$tpoint -v max_i=$max_i -v most=$most '
 	function star(sval, smax, swidth) {
 		stars = ""
 		if (smax == 0) return ""
-		for (i = 0; i < (swidth * sval / smax); i++) {
+		for (si = 0; si < (swidth * sval / smax); si++) {
 			stars = stars "#"
 		}
 		return stars
 	}
 	BEGIN {
+		'"$awkarray"'
 		printf("            %-15s: %-8s %s\n", "Range", "Count",
 		    "Distribution")
 	}
-	/Performance counter stats/ { s = 0 }
+	/Performance counter stats/ { i = -1 }
 	# reverse order of rule set is important
 	{ ok = 0 }
 	$2 == tpoint { num = $1; gsub(/,/, "", num); ok = 1 }
-	ok && s > 0 && s >= max {
-		printf("   %10d -> %-10s: %-8s |%-38s|\n", s, "", num,
-		    star(num, most, 38))
+	ok && i >= max_i {
+		printf("   %10d -> %-10s: %-8s |%-38s|\n", buckets[i],
+		    "", num, star(num, most, 38))
+		next
 	}
-	ok && s > 0 && s < max {
-		printf("   %10d -> %-10d: %-8s |%-38s|\n", s, s * pow - 1, num,
-		    star(num, most, 38))
-		s *= pow
+	ok && i >= 0 && i < max_i {
+		printf("   %10d -> %-10d: %-8s |%-38s|\n", buckets[i],
+		    buckets[i+1] - 1, num, star(num, most, 38))
+		i++
+		next
 	}
-	ok && s == 0 {
-		printf("   %10d    %-10s: %-8s |%-38s|\n", 0, "", num,
-		    star(num, most, 38))
-		s = 1
+	ok && i == -1 {
+		printf("   %10s -> %-10d: %-8s |%-38s|\n", "",
+		    buckets[0] - 1, num, star(num, most, 38))
+		i++
 	}
 '

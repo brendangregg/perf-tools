@@ -3,7 +3,7 @@
 perf-stat-hist \- histogram summary of tracepoint values. Uses Linux perf_events.
 .SH SYNOPSIS
 .B perf-stat-hist
-tracepoint variable [seconds]
+[-h] [-b buckets|-P power] [-m max] tracepoint variable [seconds]
 .SH DESCRIPTION
 This is a proof-of-concept showing in-kernel histograms using Linux perf_events
 (aka the "perf" command), on older kernels where perf_events does not have
@@ -22,6 +22,24 @@ Linux perf_events: add linux-tools-common, run "perf", then add any additional
 packages it requests. Also uses awk.
 .SH OPTIONS
 .TP
+\-h
+Usage message.
+.TP
+\-b buckets
+Specify a list of bucket points for the histogram as a string (eg, "10 500
+1000"). The histogram will include buckets for less-than the minimum, and
+greater-than-or-equal-to the maximum.  If a single value is specified, two
+statistics only are gathered: for less-than and for greater-than-or-equal-to.
+The overhead is relative to the number of buckets, so only specifying a
+single value costs the lowest overhead.
+.TP
+\-P power
+Power for power-of histogram. By default, a power-of-4 histogram is created.
+This and the \-b option are exclusive.
+.TP
+\-m max
+Max value for power-of histograms.
+.TP
 tracepoint
 Tracepoint specification. Eg, syscalls:sys_enter_read.
 .TP
@@ -35,19 +53,31 @@ Number of seconds to trace. If not specified, this runs until Ctrl-C.
 .TP
 Trace read() syscalls until Ctrl-C, and show histogram of requested size:
 #
-.B perf-stat-hist syscalls:sys_enter_read count
+.B perf\-stat\-hist syscalls:sys_enter_read count
 .TP
 Trace read() syscall completions until Ctrl-C, and show histogram of successful returned size:
 #
-.B perf-stat-hist syscalls:sys_exit_read count
+.B perf\-stat\-hist syscalls:sys_exit_read ret
 .TP
 Trace read() return sizes for 10 seconds, showing histogram:
 #
-.B perf-stat-hist syscalls:sys_exit_read count 10
+.B perf\-stat\-hist syscalls:sys_exit_read ret 10
 .TP
 Trace network transmits until Ctrl-C, and show histogram of packet size:
 #
-.B perf-stat-hist net:net_dev_xmit len
+.B perf\-stat\-hist net:net_dev_xmit len
+.TP
+Trace read() return sizes, using a power-of-10 histogram:
+.B perf\-stat\-hist \-P 10 syscalls:sys_exit_read ret
+.TP
+Trace read() return sizes, using a power-of-2 histogram, and a max of 1024:
+.B perf\-stat\-hist \-P 2 \-m 1024 syscalls:sys_exit_read ret
+.TP
+Trace read() return sizes, using the specified bucket points:
+.B perf\-stat\-hist \-b """10 50 100 5000""" syscalls:sys_exit_read ret
+.TP
+Trace read() return sizes, and bifurcate statistics by the value 10:
+.B perf-stat-hist \-b 10 syscalls:sys_exit_read ret
 .SH FIELDS
 .TP
 Range
@@ -61,7 +91,9 @@ ASCII histogram representation of the Count column.
 .SH OVERHEAD
 While the counts are performed in-kernel, there is one tracepoint used per
 histogram bucket, so the overheads are higher than usual (relative to the
-number of buckets) than function counting using perf stat.
+number of buckets) than function counting using perf stat. The lowest
+overhead is when \-b is used to specify one bucket only, bifurcating
+statistics.
 .SH SOURCE
 This is from the perf-tools collection.
 .IP
