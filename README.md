@@ -12,6 +12,7 @@ Many of these tools employ workarounds so that functionality is possible on exis
 Using perf_events:
 
 - misc/[perf-stat-hist](misc/perf-stat-hist): power-of aggregations for tracepoint variables. [Examples](examples/perf-stat-hist_example.txt).
+- misc/[bitesize](disk/bitesize): histogram summary of disk I/O size. [Examples](examples/bitesize_example.txt).
 
 Using ftrace:
 
