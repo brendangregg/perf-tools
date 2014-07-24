@@ -60,7 +60,7 @@
 tracing=/sys/kernel/debug/tracing
 flock=/var/tmp/.ftrace-lock
 opt_duration=0; duration=; opt_pid=0; pid=; pidtext=; opt_headers=0
-trap ':' INT QUIT TERM PIPE	# sends execution to end tracing section
+trap ':' INT QUIT TERM PIPE HUP	# sends execution to end tracing section
 
 function usage {
 	cat <<-END >&2

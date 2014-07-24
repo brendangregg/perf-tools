@@ -61,6 +61,7 @@ local $SIG{INT} = \&cleanup;
 local $SIG{QUIT} = \&cleanup;
 local $SIG{TERM} = \&cleanup;
 local $SIG{PIPE} = \&cleanup;
+local $SIG{HUP} = \&cleanup;
 $| = 1;
 
 ### options

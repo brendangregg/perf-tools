@@ -50,7 +50,7 @@ tracing=/sys/kernel/debug/tracing
 flock=/var/tmp/.ftrace-lock; wroteflock=0
 opt_duration=0; duration=; opt_name=0; name=; opt_pid=0; pid=; ftext=
 opt_time=0; opt_fail=0; opt_file=0; file=
-trap ':' INT QUIT TERM PIPE	# sends execution to end tracing section
+trap ':' INT QUIT TERM PIPE HUP	# sends execution to end tracing section
 
 function usage {
 	cat <<-END >&2

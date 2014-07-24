@@ -45,7 +45,7 @@ flock=/var/tmp/.ftrace-lock
 bufsize_kb=4096
 opt_device=0; device=; opt_iotype=0; iotype=; opt_timestamp=0
 opt_interval=0; interval=1; opt_count=0; count=0; opt_queue=0
-trap ':' INT QUIT TERM PIPE	# sends execution to end tracing section
+trap ':' INT QUIT TERM PIPE HUP	# sends execution to end tracing section
 
 function usage {
 	cat <<-END >&2

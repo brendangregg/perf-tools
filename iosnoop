@@ -59,7 +59,7 @@ bufsize_kb=4096
 opt_duration=0; duration=; opt_name=0; name=; opt_pid=0; pid=; ftext=
 opt_start=0; opt_end=0; opt_device=0; device=; opt_iotype=0; iotype=
 opt_queue=0
-trap ':' INT QUIT TERM PIPE	# sends execution to end tracing section
+trap ':' INT QUIT TERM PIPE HUP	# sends execution to end tracing section
 
 function usage {
 	cat <<-END >&2

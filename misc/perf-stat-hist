@@ -44,7 +44,7 @@
 
 opt_buckets=0; buckets=; opt_power=0; power=4; opt_max=0; max=$((1024 * 1024))
 duration=0; debug=0
-trap ':' INT QUIT TERM PIPE
+trap ':' INT QUIT TERM PIPE HUP
 
 function usage {
 	cat <<-END >&2

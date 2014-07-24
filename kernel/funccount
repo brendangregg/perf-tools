@@ -43,7 +43,7 @@
 tracing=/sys/kernel/debug/tracing
 opt_duration=0; duration=; opt_interval=0; interval=999999; opt_timestamp=0
 opt_tail=0; tcmd=cat; ttext=
-trap 'quit=1' INT QUIT TERM PIPE	# sends execution to end tracing section
+trap 'quit=1' INT QUIT TERM PIPE HUP	# sends execution to end tracing section
 
 function usage {
 	cat <<-END >&2

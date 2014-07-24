@@ -46,7 +46,7 @@
 duration=0
 buckets=(1 8 64 128)
 secsz=512
-trap ':' INT QUIT TERM PIPE
+trap ':' INT QUIT TERM PIPE HUP
 
 function usage {
 	cat <<-END >&2
