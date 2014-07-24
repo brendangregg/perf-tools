@@ -35,7 +35,7 @@ Requires the "perf" command to be installed. This is in the linux-tools-common p
 
 ### ftrace
 
-FTRACE configured in the kernel.
+FTRACE configured in the kernel. You may already have this configured and available in your kernel version (FTRACE was first added in 2.6.27). This requires CONFIG_FTRACE and other "FTRACE" options depending on the tool. Some tools (eg, funccount) require CONFIG_FUNCTION_PROFILER.
 
 ## Install
 
