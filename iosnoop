@@ -10,6 +10,8 @@
 #
 # USAGE: ./iosnoop [-hQst] [-d device] [-i iotype] [-p pid] [-n name] [duration]
 #
+# Run "iosnoop -h" for full usage.
+#
 # REQUIREMENTS: FTRACE CONFIG, block:block_rq_* tracepoints (you may
 # already have these on recent kernels).
 #
@@ -78,7 +80,10 @@ function usage {
 	       iosnoop -Q                # include queueing time in LATms
 	       iosnoop -ts               # include start and end timestamps
 	       iosnoop -i '*R*'          # trace reads
-	       iosnoop -p 181            # trace I/O issued by PID 181 only
+	       iosnoop -p 91             # show I/O issued when PID 91 is on-CPU
+	       iosnoop -Qp 91            # show I/O queued by PID 91, queue time
+
+	See the man page and example file for more info.
 END
 	exit
 }

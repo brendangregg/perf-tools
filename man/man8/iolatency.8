@@ -3,7 +3,7 @@
 iolatency \- summarize block device I/O latency as a histogram. Uses Linux ftrace.
 .SH SYNOPSIS
 .B iolatency
-[\-hT] [\-d device] [\-i iotype] [interval [count]]
+[\-hQT] [\-d device] [\-i iotype] [interval [count]]
 .SH DESCRIPTION
 This shows the distribution of latency, allowing modes and latency outliers
 to be identified and studied. For more details of block device I/O, use
@@ -38,6 +38,11 @@ end (only). Eg, "*R*" matches all reads. This is filtered in-kernel.
 \-h
 Print usage message.
 .TP
+\-Q
+Include block I/O queueing time. This uses block I/O queue insertion as the
+start tracepoint (block:block_rq_insert), instead of block I/O issue
+(block:block_rq_issue).
+.TP
 \-T
 Include timestamps with each summary output.
 .TP
@@ -58,6 +63,9 @@ Number of summaries to print.
 Default output, print a summary of block I/O latency every 1 second:
 # 
 .B iolatency
+.TP
+Include block I/O queue time:
+.B iolatency \-Q
 .TP
 Print 5 x 1 second summaries:
 #

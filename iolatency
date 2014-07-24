@@ -6,7 +6,7 @@
 # This shows the distribution of latency, allowing modes and latency outliers
 # to be identified and studied.
 #
-# USAGE: ./iolatency [-hT] [-d device] [-i iotype] [interval [count]]
+# USAGE: ./iolatency [-hQT] [-d device] [-i iotype] [interval [count]]
 #
 # REQUIREMENTS: FTRACE CONFIG and block:block_rq_* tracepoints, which you may
 # already have on recent kernels.
@@ -44,23 +44,27 @@ tracing=/sys/kernel/debug/tracing
 flock=/var/tmp/.ftrace-lock
 bufsize_kb=4096
 opt_device=0; device=; opt_iotype=0; iotype=; opt_timestamp=0
-opt_interval=0; interval=1; opt_count=0; count=0
+opt_interval=0; interval=1; opt_count=0; count=0; opt_queue=0
 trap ':' INT QUIT TERM PIPE	# sends execution to end tracing section
 
 function usage {
 	cat <<-END >&2
-	USAGE: iolatency [-hT] [-d device] [-i iotype] [interval [count]]
+	USAGE: iolatency [-hQT] [-d device] [-i iotype] [interval [count]]
 	                 -d device       # device string (eg, "202,1)
 	                 -i iotype       # match type (eg, '*R*' for all reads)
+	                 -Q              # use queue insert as start time
 	                 -T              # timestamp on output
 	                 -h              # this usage message
 	                 interval        # summary interval, seconds (default 1)
 	                 count           # number of summaries
 	  eg,
 	       iolatency                 # summarize latency every second
+	       iolatency -Q              # include block I/O queue time
 	       iolatency 5 2             # 2 x 5 second summaries
 	       iolatency -i '*R*'        # trace reads
 	       iolatency -d 202,1        # trace device 202,1 only
+
+	See the man page and example file for more info.
 END
 	exit
 }
@@ -76,10 +80,10 @@ function end {
 	echo 2>/dev/null
 	echo "Ending tracing..." 2>/dev/null
 	cd $tracing
-	warn "echo 0 > events/block/block_rq_issue/enable"
+	warn "echo 0 > events/block/$b_start/enable"
 	warn "echo 0 > events/block/block_rq_complete/enable"
 	if (( opt_device || opt_iotype )); then
-		warn "echo 0 > events/block/block_rq_issue/filter"
+		warn "echo 0 > events/block/$b_start/filter"
 		warn "echo 0 > events/block/block_rq_complete/filter"
 	fi
 	warn "echo > trace"
@@ -100,11 +104,12 @@ function edie {
 }
 
 ### process options
-while getopts d:hi:T opt
+while getopts d:hi:QT opt
 do
 	case $opt in
 	d)	opt_device=1; device=$OPTARG ;;
 	i)	opt_iotype=1; iotype=$OPTARG ;;
+	Q)	opt_queue=1 ;;
 	T)	opt_timestamp=1 ;;
 	h|?)	usage ;;
 	esac
@@ -123,6 +128,11 @@ if (( opt_device )); then
 	major=${device%,*}
 	minor=${device#*,}
 	dev=$(( (major << 20) + minor ))
+fi
+if (( opt_queue )); then
+	b_start=block_rq_insert
+else
+	b_start=block_rq_issue
 fi
 
 ### select awk
@@ -150,13 +160,13 @@ if (( opt_device )); then
 fi
 if (( opt_iotype || opt_device )); then
 echo $filter
-	if ! echo "$filter" > events/block/block_rq_issue/filter || \
+	if ! echo "$filter" > events/block/$b_start/filter || \
 	    ! echo "$filter" > events/block/block_rq_complete/filter
 	then
 		edie "ERROR: setting -d or -t filter. Exiting."
 	fi
 fi
-if ! echo 1 > events/block/block_rq_issue/enable || \
+if ! echo 1 > events/block/$b_start/enable || \
     ! echo 1 > events/block/block_rq_complete/enable; then
 	edie "ERROR: enabling block I/O tracepoints. Exiting."
 fi
@@ -192,11 +202,10 @@ while (( !opt_count || (i < count) )); do
 		echo > trace
 	fi
 
-	# mawk lacks strftime(), so do this in bash
 	(( opt_timestamp )) && printf "time %(%H:%M:%S)T:\n" -1
 	echo "tick"
 done | \
-$awk -v o=$offset -v opt_timestamp=$opt_timestamp '
+$awk -v o=$offset -v opt_timestamp=$opt_timestamp -v b_start=$b_start '
 	function star(sval, smax, swidth) {
 		stars = ""
 		if (smax == 0) return ""
@@ -215,7 +224,7 @@ $awk -v o=$offset -v opt_timestamp=$opt_timestamp '
 	}
 
 	# block I/O request
-	$1 != "#" && $0 ~ /rq_issue/ {
+	$1 != "#" && $0 ~ b_start {
 		#
 		# example: (fields1..4+o) 202,1 W 0 () 12862264 + 8 [tar]
 		# The cmd field "()" might contain multiple words (hex),

@@ -116,15 +116,83 @@ supervise        1805   W    202,1    17040632     4096       0.44
 ^C
 Ending tracing...
 
-This works by using an in-kernel filter for that PID on I/O issue. I would say
-that this will generally work, but there will be an error margin: depending on
-the file system and I/O subsystem, this could miss events that aren't issued
-in this PID context but are related to this PID (eg, triggering a read
-readahead on the completion of previous I/O. Again, whether this happens
-is up to the file system and storage subsystem).
+This option works by using an in-kernel filter for that PID on I/O issue. There
+is also a "-n" option to match on process names, however, that currently does so
+in user space, so is less efficient.
 
-There is also a "-n" option to match on process names, however, that currently
-does so in user space, so is less efficient.
+I would say that this will generally identify the origin process, but there will
+be an error margin. Depending on the file system, block I/O queueing, and I/O
+subsystem, this could miss events that aren't issued in this PID context but are
+related to this PID (eg, triggering a read readahead on the completion of
+previous I/O. Again, whether this happens is up to the file system and storage
+subsystem). You can try the -Q option for more reliable process identification.
+
+
+The -Q option begins tracing on block I/O queue insert, instead of issue.
+Here's before and after, while dd(1) writes a large file:
+
+# .liosnoop
+Tracing block I/O. Ctrl-C to end.
+COMM             PID    TYPE DEV      BLOCK        BYTES     LATms
+dd               26983  WS   202,16   4064416      45056     16.70
+dd               26983  WS   202,16   4064504      45056     16.72
+dd               26983  WS   202,16   4064592      45056     16.74
+dd               26983  WS   202,16   4064680      45056     16.75
+cat              27031  WS   202,16   4064768      45056     16.56
+cat              27031  WS   202,16   4064856      45056     16.46
+cat              27031  WS   202,16   4064944      45056     16.40
+gawk             27030  WS   202,16   4065032      45056      0.88
+gawk             27030  WS   202,16   4065120      45056      1.01
+gawk             27030  WS   202,16   4065208      45056     16.15
+gawk             27030  WS   202,16   4065296      45056     16.16
+gawk             27030  WS   202,16   4065384      45056     16.16
+[...]
+
+The output here shows the block I/O time from issue to completion (LATms),
+which is largely representative of the device.
+
+The process names and PIDs identify dd, cat, and gawk. By default iosnoop shows
+who is on-CPU at time of block I/O issue, but these may not be the processes
+that originated the I/O. In this case (having debugged it), the reason is that
+processes such as cat and gawk are making hypervisor calls (this is a Xen
+guest instance), eg, for memory operations, and during hypervisor processing a
+queue of pending work is checked and dispatched. So cat and gawk were on-CPU
+when the block device I/O was issued, but they didn't originate it.
+
+Now the -Q option is used:
+
+# .liosnoop -Q
+Tracing block I/O. Ctrl-C to end.
+COMM             PID    TYPE DEV      BLOCK        BYTES     LATms
+kjournald        1217   WS   202,16   6132200      45056    141.12
+kjournald        1217   WS   202,16   6132288      45056    141.10
+kjournald        1217   WS   202,16   6132376      45056    141.10
+kjournald        1217   WS   202,16   6132464      45056    141.11
+kjournald        1217   WS   202,16   6132552      40960    141.11
+dd               27718  WS   202,16   6132624      4096       0.18
+flush:16-1279    1279   W    202,16   6132632      20480      0.52
+flush:16-1279    1279   W    202,16   5940856      4096       0.50
+flush:16-1279    1279   W    202,16   5949056      4096       0.52
+flush:16-1279    1279   W    202,16   5957256      4096       0.54
+flush:16-1279    1279   W    202,16   5965456      4096       0.56
+flush:16-1279    1279   W    202,16   5973656      4096       0.58
+flush:16-1279    1279   W    202,16   5981856      4096       0.60
+flush:16-1279    1279   W    202,16   5990056      4096       0.63
+[...]
+
+This uses the block_rq_insert tracepoint as the starting point of I/O, instead
+of block_rq_issue. This makes the following differences to columns and options:
+
+- COMM: more likely to show the originating process.
+- PID: more likely to show the originating process.
+- LATms: shows the I/O time, including time spent on the block I/O queue.
+- STARTs (not shown above): shows the time of queue insert, not I/O issue.
+- -p PID: more likely to match the originating process.
+- -n name: more likely to match the originating process.
+
+The reason that this ftrace-based iosnoop does not just instrument both insert
+and issue tracepoints is one of overhead. Even with buffering, iosnoop can
+have difficulty under high load.
 
 
 If I want to capture events for post-processing, I use the duration mode, which

@@ -55,3 +55,39 @@ I/O latency ("await") averages 0.24 and 0.22 ms for our busy disks, but this
 output doesn't show that occasionally is much higher.
 
 To get more information on these I/O, try the iosnoop(8) tool.
+
+
+The -Q option includes the block I/O queued time, by tracing based on
+block_rq_insert instead of block_rq_issue:
+
+# ./iolatency -Q
+Tracing block I/O. Output every 1 seconds. Ctrl-C to end.
+
+  >=(ms) .. <(ms)   : I/O      |Distribution                          |
+       0 -> 1       : 1913     |######################################|
+       1 -> 2       : 438      |#########                             |
+       2 -> 4       : 100      |##                                    |
+       4 -> 8       : 145      |###                                   |
+       8 -> 16      : 43       |#                                     |
+      16 -> 32      : 43       |#                                     |
+      32 -> 64      : 1        |#                                     |
+
+  >=(ms) .. <(ms)   : I/O      |Distribution                          |
+       0 -> 1       : 2360     |######################################|
+       1 -> 2       : 132      |###                                   |
+       2 -> 4       : 72       |##                                    |
+       4 -> 8       : 14       |#                                     |
+       8 -> 16      : 1        |#                                     |
+
+  >=(ms) .. <(ms)   : I/O      |Distribution                          |
+       0 -> 1       : 2138     |######################################|
+       1 -> 2       : 496      |#########                             |
+       2 -> 4       : 81       |##                                    |
+       4 -> 8       : 40       |#                                     |
+       8 -> 16      : 1        |#                                     |
+      16 -> 32      : 2        |#                                     |
+^C
+Ending tracing...
+
+I use this along with the default mode to identify problems of load (queueing)
+vs problems of the device, which is shown by default.
