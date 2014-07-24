@@ -58,11 +58,11 @@ function usage {
 	                 interval        # summary interval, seconds (default 1)
 	                 count           # number of summaries
 	  eg,
-	       iolatency                 # summarize latency every second
-	       iolatency -Q              # include block I/O queue time
-	       iolatency 5 2             # 2 x 5 second summaries
-	       iolatency -i '*R*'        # trace reads
-	       iolatency -d 202,1        # trace device 202,1 only
+	        iolatency                # summarize latency every second
+	        iolatency -Q             # include block I/O queue time
+	        iolatency 5 2            # 2 x 5 second summaries
+	        iolatency -i '*R*'       # trace reads
+	        iolatency -d 202,1       # trace device 202,1 only
 
 	See the man page and example file for more info.
 END
@@ -159,7 +159,6 @@ if (( opt_device )); then
 	filter="${filter}dev == $dev"
 fi
 if (( opt_iotype || opt_device )); then
-echo $filter
 	if ! echo "$filter" > events/block/$b_start/filter || \
 	    ! echo "$filter" > events/block/block_rq_complete/filter
 	then
