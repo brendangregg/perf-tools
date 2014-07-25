@@ -166,3 +166,97 @@ Tracing kprobe myopen. Ctrl-C to end.
 Ending tracing...
 
 This filtering is done in-kernel context.
+
+
+As an example of tracing a deeper kernel function, lets trace bio_alloc() and
+entry registers:
+
+# ./kprobe 'p:myprobe bio_alloc %ax %bx %cx %dx'
+Tracing kprobe myprobe. Ctrl-C to end.
+       supervise-3055  [000] 2172148.728250: myprobe: (bio_alloc+0x0/0x30) arg1=ffff880064acc8d0 arg2=ffff8800e56a7990 arg3=0 arg4=ffff880064acc910
+       supervise-3055  [000] 2172148.728527: myprobe: (bio_alloc+0x0/0x30) arg1=ffff880064acf948 arg2=ffff8800e56a7990 arg3=0 arg4=ffff880064acf988
+    jbd2/xvda1-8-212   [000] 2172149.749474: myprobe: (bio_alloc+0x0/0x30) arg1=ffffffff arg2=ffff8800ad1f87b8 arg3=ffff8800ba22c06c arg4=8
+    jbd2/xvda1-8-212   [000] 2172149.749485: myprobe: (bio_alloc+0x0/0x30) arg1=0 arg2=ffff880089d053a8 arg3=10f16c5bb arg4=0
+    jbd2/xvda1-8-212   [000] 2172149.749487: myprobe: (bio_alloc+0x0/0x30) arg1=0 arg2=ffff880089d05958 arg3=5 arg4=0
+    jbd2/xvda1-8-212   [000] 2172149.749488: myprobe: (bio_alloc+0x0/0x30) arg1=0 arg2=ffff880089d05b60 arg3=5 arg4=0
+    jbd2/xvda1-8-212   [000] 2172149.749489: myprobe: (bio_alloc+0x0/0x30) arg1=0 arg2=ffff880089d05820 arg3=5 arg4=0
+    jbd2/xvda1-8-212   [000] 2172149.749489: myprobe: (bio_alloc+0x0/0x30) arg1=0 arg2=ffff880089d055b0 arg3=5 arg4=0
+    jbd2/xvda1-8-212   [000] 2172149.749490: myprobe: (bio_alloc+0x0/0x30) arg1=0 arg2=ffff88006ff22ea0 arg3=5 arg4=0
+    jbd2/xvda1-8-212   [000] 2172149.749491: myprobe: (bio_alloc+0x0/0x30) arg1=0 arg2=ffff880089d1f000 arg3=5 arg4=0
+    jbd2/xvda1-8-212   [000] 2172149.749492: myprobe: (bio_alloc+0x0/0x30) arg1=0 arg2=ffff880089d1f138 arg3=5 arg4=0
+    jbd2/xvda1-8-212   [000] 2172149.749493: myprobe: (bio_alloc+0x0/0x30) arg1=0 arg2=ffff88005d267138 arg3=5 arg4=0
+    jbd2/xvda1-8-212   [000] 2172149.749494: myprobe: (bio_alloc+0x0/0x30) arg1=0 arg2=ffff88005d267680 arg3=5 arg4=0
+    jbd2/xvda1-8-212   [000] 2172149.749495: myprobe: (bio_alloc+0x0/0x30) arg1=0 arg2=ffff88005d2675b0 arg3=5 arg4=0
+    jbd2/xvda1-8-212   [000] 2172149.751044: myprobe: (bio_alloc+0x0/0x30) arg1=ffffffff arg2=ffff8800cc241ea0 arg3=445f0300 arg4=ffff8800effba000
+       supervise-3055  [000] 2172149.751095: myprobe: (bio_alloc+0x0/0x30) arg1=ffff880064acf948 arg2=ffff8800e56a7990 arg3=0 arg4=ffff880064acf988
+       supervise-3055  [000] 2172149.751341: myprobe: (bio_alloc+0x0/0x30) arg1=ffff880064acc8d0 arg2=ffff8800e56a7990 arg3=0 arg4=ffff880064acc910
+       supervise-3055  [000] 2172150.772033: myprobe: (bio_alloc+0x0/0x30) arg1=ffff880064acc8d0 arg2=ffff8800e56a7990 arg3=0 arg4=ffff880064acc910
+       supervise-3055  [000] 2172150.772305: myprobe: (bio_alloc+0x0/0x30) arg1=ffff880064acf948 arg2=ffff8800e56a7990 arg3=0 arg4=ffff880064acf988
+     flush-202:1-409   [000] 2172151.087815: myprobe: (bio_alloc+0x0/0x30) arg1=ffffffff arg2=ffff8800da51d6e8 arg3=16afd arg4=1
+     flush-202:1-409   [000] 2172151.087829: myprobe: (bio_alloc+0x0/0x30) arg1=ffffffff arg2=ffff8800e7537f08 arg3=16afd arg4=2
+     flush-202:1-409   [000] 2172151.087844: myprobe: (bio_alloc+0x0/0x30) arg1=ffffffff arg2=ffff8800e7519af8 arg3=16afd arg4=3
+     flush-202:1-409   [000] 2172151.087846: myprobe: (bio_alloc+0x0/0x30) arg1=ffffffff arg2=ffff8800e7511478 arg3=16afd arg4=4
+     flush-202:1-409   [000] 2172151.087849: myprobe: (bio_alloc+0x0/0x30) arg1=ffffffff arg2=ffff8800e75e6a90 arg3=16afd arg4=5
+     flush-202:1-409   [000] 2172151.087851: myprobe: (bio_alloc+0x0/0x30) arg1=ffffffff arg2=ffff8800e7512bc8 arg3=16afd arg4=6
+     flush-202:1-409   [000] 2172151.087853: myprobe: (bio_alloc+0x0/0x30) arg1=ffffffff arg2=ffff8800eb3bf410 arg3=16afd arg4=7
+^C
+
+The output includes who is on-CPU, high resolution timestamps, and the arguments
+we requested (registers %ax to %dx). These registers are platform dependent,
+and are mapped by the compiler to the entry arguments of the function.
+
+How are these useful? If you are debugging this kernel function, you'll know. :)
+
+
+Note that you can add qualifiers, eg, if I knew %ax was a uint32:
+
+# ./kprobe 'p:myprobe bio_alloc %ax:u32'
+Tracing kprobe myprobe. Ctrl-C to end.
+       supervise-3055  [000] 2172389.734606: myprobe: (bio_alloc+0x0/0x30) arg1=64acf948
+       supervise-3055  [000] 2172389.734865: myprobe: (bio_alloc+0x0/0x30) arg1=64acc8d0
+       supervise-3055  [000] 2172390.772391: myprobe: (bio_alloc+0x0/0x30) arg1=64acf948
+       supervise-3055  [000] 2172390.772676: myprobe: (bio_alloc+0x0/0x30) arg1=64acc8d0
+^C
+Ending tracing...
+
+You can give them aliases too, instead of the default arg1..N:
+
+# ./kprobe 'p:myprobe bio_alloc ax=%ax'
+Tracing kprobe myprobe. Ctrl-C to end.
+       supervise-3055  [000] 2172420.451663: myprobe: (bio_alloc+0x0/0x30) ax=ffff880064acc8d0
+       supervise-3055  [000] 2172420.451938: myprobe: (bio_alloc+0x0/0x30) ax=ffff880064acf948
+     flush-202:1-409   [000] 2172421.163462: myprobe: (bio_alloc+0x0/0x30) ax=ffff880064acc8d0
+       supervise-3055  [000] 2172421.500994: myprobe: (bio_alloc+0x0/0x30) ax=ffff880064acc8d0
+       supervise-3055  [000] 2172421.501307: myprobe: (bio_alloc+0x0/0x30) ax=ffff880064acf948
+^C
+Ending tracing...
+
+
+Now for the return of bio_alloc():
+
+# ./kprobe 'r:myprobe bio_alloc $retval'
+Tracing kprobe myprobe. Ctrl-C to end.
+       supervise-3055  [000] 2172164.145533: myprobe: (io_submit_init.isra.6+0x74/0x100 <- bio_alloc) arg1=ffff8800e55843c0
+       supervise-3055  [000] 2172164.145829: myprobe: (io_submit_init.isra.6+0x74/0x100 <- bio_alloc) arg1=ffff8800e5584840
+    jbd2/xvda1-8-212   [000] 2172165.166453: myprobe: (submit_bh+0x76/0x120 <- bio_alloc) arg1=ffff8800e57596c0
+    jbd2/xvda1-8-212   [000] 2172165.166493: myprobe: (submit_bh+0x76/0x120 <- bio_alloc) arg1=ffff8800e5759c00
+    jbd2/xvda1-8-212   [000] 2172165.166496: myprobe: (submit_bh+0x76/0x120 <- bio_alloc) arg1=ffff8800e5759600
+    jbd2/xvda1-8-212   [000] 2172165.166497: myprobe: (submit_bh+0x76/0x120 <- bio_alloc) arg1=ffff8800e5759e40
+    jbd2/xvda1-8-212   [000] 2172165.166498: myprobe: (submit_bh+0x76/0x120 <- bio_alloc) arg1=ffff8800e57590c0
+    jbd2/xvda1-8-212   [000] 2172165.166500: myprobe: (submit_bh+0x76/0x120 <- bio_alloc) arg1=ffff8800e57599c0
+    jbd2/xvda1-8-212   [000] 2172165.166500: myprobe: (submit_bh+0x76/0x120 <- bio_alloc) arg1=ffff8800e5759a80
+    jbd2/xvda1-8-212   [000] 2172165.166502: myprobe: (submit_bh+0x76/0x120 <- bio_alloc) arg1=ffff8800e5759f00
+    jbd2/xvda1-8-212   [000] 2172165.166503: myprobe: (submit_bh+0x76/0x120 <- bio_alloc) arg1=ffff8800e5759540
+    jbd2/xvda1-8-212   [000] 2172165.166504: myprobe: (submit_bh+0x76/0x120 <- bio_alloc) arg1=ffff8800e5759180
+    jbd2/xvda1-8-212   [000] 2172165.166504: myprobe: (submit_bh+0x76/0x120 <- bio_alloc) arg1=ffff8800e5759900
+    jbd2/xvda1-8-212   [000] 2172165.166505: myprobe: (submit_bh+0x76/0x120 <- bio_alloc) arg1=ffff8800e5759000
+    jbd2/xvda1-8-212   [000] 2172165.166506: myprobe: (submit_bh+0x76/0x120 <- bio_alloc) arg1=ffff8800e5759480
+           <...>-212   [000] 2172165.176261: myprobe: (submit_bh+0x76/0x120 <- bio_alloc) arg1=ffff8800e5759480
+       supervise-3055  [000] 2172165.176317: myprobe: (io_submit_init.isra.6+0x74/0x100 <- bio_alloc) arg1=ffff8800e57596c0
+       supervise-3055  [000] 2172165.176586: myprobe: (io_submit_init.isra.6+0x74/0x100 <- bio_alloc) arg1=ffff8800e5759900
+^C
+Ending tracing...
+
+Great. Note that this mode (without a duration) prints events as they happen,
+so the overheads can be high for frequent events. You could try the -d mode,
+which buffers in-kernel.
