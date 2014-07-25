@@ -106,11 +106,6 @@ function edie {
 	exit 1
 }
 
-verlte() {
-	[[  "$1" == $(echo -e "$1\n$2" | sort -V | head -n1) ]]
-	return $?
-}
-
 ### process options
 while getopts d:f:hn:p:tx opt
 do
@@ -152,7 +147,8 @@ wroteflock=1
 
 ### setup and begin tracing
 echo nop > current_tracer
-if verlte $(uname -r) 3.6; then
+ver=$(uname -r)
+if [[ "$ver" == 2.* || "$ver" == 3.[1-6].* ]]; then
 	# rval is char *
 	kprobe='r:getnameprobe getname +0($retval):string'
 else
