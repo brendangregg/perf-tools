@@ -50,7 +50,7 @@ tracing=/sys/kernel/debug/tracing
 flock=/var/tmp/.ftrace-lock; wroteflock=0
 opt_duration=0; duration=; opt_name=0; name=; opt_pid=0; pid=; ftext=
 opt_time=0; opt_fail=0; opt_file=0; file=
-trap ':' INT QUIT TERM PIPE	# sends execution to end tracing section
+trap ':' INT QUIT TERM PIPE HUP	# sends execution to end tracing section
 
 function usage {
 	cat <<-END >&2
@@ -63,10 +63,10 @@ function usage {
 	                 -x              # only show failed opens
 	                 -h              # this usage message
 	  eg,
-	        opensnoop                # watch open()s live (unbuffered)
-	        opensnoop -d 1           # trace 1 sec (buffered)
-	        opensnoop -f conf        # trace filenames containing "conf"
-	        opensnoop -p 181         # trace I/O issued by PID 181 only
+	       opensnoop                 # watch open()s live (unbuffered)
+	       opensnoop -d 1            # trace 1 sec (buffered)
+	       opensnoop -f conf         # trace filenames containing "conf"
+	       opensnoop -p 181          # trace I/O issued by PID 181 only
 END
 	exit
 }
@@ -106,6 +106,11 @@ function edie {
 	exit 1
 }
 
+verlte() {
+	[[  "$1" == $(echo -e "$1\n$2" | sort -V | head -n1) ]]
+	return $?
+}
+
 ### process options
 while getopts d:f:hn:p:tx opt
 do
@@ -137,7 +142,8 @@ fi
 [[ -x /usr/bin/$use ]] && awk=$use || awk=awk
 
 ### check permissions
-cd $tracing || die "ERROR: accessing tracing. Root user? Kernel has FTRACE?"
+cd $tracing || die "ERROR: accessing tracing. Root user? Kernel has FTRACE?
+    debugfs mounted? (mount -t debugfs debugfs /sys/kernel/debug)"
 
 ### ftrace lock
 [[ -e $flock ]] && die "ERROR: ftrace may be in use by PID $(cat $flock) $flock"
@@ -146,8 +152,7 @@ wroteflock=1
 
 ### setup and begin tracing
 echo nop > current_tracer
-ver=$(uname -r)
-if [[ "$ver" == 2.* || "$ver." == 3.[1-6].* ]]; then
+if verlte $(uname -r) 3.6; then
 	# rval is char *
 	kprobe='r:getnameprobe getname +0($retval):string'
 else
