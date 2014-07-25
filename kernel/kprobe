@@ -7,7 +7,7 @@
 # Documentation/trace/kprobetrace.txt in the Linux kernel source for the
 # syntax of a kprobe definition.
 #
-# USAGE: ./kprobe [-hv] [-d secs] [-p pid] kprobe_definition [filter]
+# USAGE: ./kprobe [-hHsv] [-d secs] [-p pid] kprobe_definition [filter]
 #
 # Run "kprobe -h" for full usage.
 #
@@ -45,16 +45,17 @@
 tracing=/sys/kernel/debug/tracing
 flock=/var/tmp/.ftrace-lock; wroteflock=0
 opt_duration=0; duration=; opt_pid=0; pid=; opt_filter=0; filter=
-opt_view=0; opt_headers=0; dmesg=2
+opt_view=0; opt_headers=0; opt_stack=0; dmesg=2
 trap ':' INT QUIT TERM PIPE HUP	# sends execution to end tracing section
 
 function usage {
 	cat <<-END >&2
-	USAGE: kprobe [-hHv] [-d secs] [-p PID] kprobe_definition [filter]
+	USAGE: kprobe [-hHsv] [-d secs] [-p PID] kprobe_definition [filter]
 	                 -d seconds      # trace duration, and use buffers
 	                 -p PID          # PID to match on I/O issue
 	                 -v              # view format file (don't trace)
 	                 -H              # include column headers
+	                 -s              # show kernel stack traces
 	                 -h              # this usage message
 	
 	Note that these examples may need modification to match your kernel
@@ -66,6 +67,8 @@ function usage {
 	                                 # trace open() file mode
 	       kprobe 'p:myopen do_sys_open filename=+0(%si):string'
 	                                 # trace open() with filename
+	       kprobe -s 'p:myprobe tcp_retransmit_skb'
+	                                 # show kernel stacks
 END
 	exit
 }
@@ -86,6 +89,7 @@ function end {
 		warn "echo 0 > events/kprobes/$kname/filter"
 	fi
 	warn "echo -:$kname >> kprobe_events"
+	(( opt_stack )) && warn "echo 0 > options/stacktrace"
 	warn "echo > trace"
 	(( wroteflock )) && warn "rm $flock"
 }
@@ -104,12 +108,13 @@ function edie {
 }
 
 ### process options
-while getopts d:hHp:v opt
+while getopts d:hHp:sv opt
 do
 	case $opt in
 	d)	opt_duration=1; duration=$OPTARG ;;
 	p)	opt_pid=1; pid=$OPTARG ;;
 	H)	opt_headers=1 ;;
+	s)	opt_stack=1 ;;
 	v)	opt_view=1 ;;
 	h|?)	usage ;;
 	esac
@@ -156,7 +161,7 @@ wroteflock=1
 
 ### setup and begin tracing
 echo nop > current_tracer
-if ! echo $kprobe >> kprobe_events; then
+if ! echo "$kprobe" >> kprobe_events; then
 	echo >&2 "ERROR: adding kprobe \"$kprobe\"."
 	if (( dmesg )); then
 		echo >&2 "Last $dmesg dmesg entries (might contain reason):"
@@ -171,6 +176,11 @@ fi
 if (( opt_filter )); then
 	if ! echo "$filter" > events/kprobes/$kname/filter; then
 		edie "ERROR: setting filter or -p. Exiting."
+	fi
+fi
+if (( opt_stack )); then
+	if ! echo 1 > options/stacktrace; then
+		edie "ERROR: enabling stack traces (-s). Exiting"
 	fi
 fi
 if ! echo 1 > events/kprobes/$kname/enable; then

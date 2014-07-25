@@ -3,7 +3,7 @@
 kprobe \- trace a given kprobe definition. Kernel dynamic tracing. Uses Linux ftrace.
 .SH SYNOPSIS
 .B kprobe
-[\-hv] [\-d secs] [\-p PIDs] kprobe_definition [filter]
+[\-hHsv] [\-d secs] [\-p PIDs] kprobe_definition [filter]
 .SH DESCRIPTION
 This will create, trace, then destroy a given kprobe. See
 Documentation/trace/kprobetrace.txt in the Linux kernel source for the
@@ -37,6 +37,9 @@ Print usage message.
 .TP
 \-H
 Print column headers.
+.TP
+\-s
+Print kernel stack traces after each event.
 .TP
 \-v
 Show the kprobe format file only (do not trace), identifying possible variables
@@ -73,9 +76,13 @@ Trace do_sys_open() with filename string:
 #
 .B kprobe 'p:myopen do_sys_open filename=+0(%si):string'
 .TP
-Trace do_sys_open() for filenames ending in "stat"
+Trace do_sys_open() for filenames ending in "stat":
 #
 .B kprobe 'p:myopen do_sys_open fn=+0(%si):string' 'fn ~ """*stat"""'
+.TP
+Trace tcp_retransmit_skb() and show kernel stack traces, showing the path that led to it (can help explain why):
+#
+.B kprobe \-s 'p:myprobe tcp_retransmit_skb'
 .SH FIELDS
 The output format depends on the kernel version, and headings can be printed
 using \-H. The format is the same as the ftrace function trace format, described

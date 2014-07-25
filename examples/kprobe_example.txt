@@ -263,3 +263,47 @@ submit_bh().
 Note that this mode (without a duration) prints events as they happen,
 so the overheads can be high for frequent events. You could try the -d mode,
 which buffers in-kernel.
+
+
+The -s option will print the kernel stack trace after the event:
+
+# ./kprobe -s 'p:mytcp tcp_init_cwnd'
+Tracing kprobe mytcp. Ctrl-C to end.
+            sshd-5121  [000] d... 6897275.911301: mytcp: (tcp_init_cwnd+0x0/0x40)
+            sshd-5121  [000] d... 6897275.911309: <stack trace>
+ => tcp_write_xmit
+ => __tcp_push_pending_frames
+ => tcp_push
+ => tcp_sendmsg
+ => inet_sendmsg
+ => sock_aio_write
+ => do_sync_write
+ => vfs_write
+ => SyS_write
+ => system_call_fastpath
+            sshd-32219 [000] d... 6897275.911467: mytcp: (tcp_init_cwnd+0x0/0x40)
+            sshd-32219 [000] d... 6897275.911471: <stack trace>
+ => tcp_write_xmit
+ => __tcp_push_pending_frames
+ => tcp_push
+ => tcp_sendmsg
+ => inet_sendmsg
+ => sock_aio_write
+ => do_sync_write
+ => vfs_write
+ => SyS_write
+ => system_call_fastpath
+            sshd-5121  [000] d... 6897277.878794: mytcp: (tcp_init_cwnd+0x0/0x40)
+            sshd-5121  [000] d... 6897277.878801: <stack trace>
+ => tcp_write_xmit
+ => __tcp_push_pending_frames
+ => tcp_push
+ => tcp_sendmsg
+ => inet_sendmsg
+ => sock_aio_write
+ => do_sync_write
+ => vfs_write
+ => SyS_write
+ => system_call_fastpath
+
+This makes use of the kernel options/stacktrace feature.
