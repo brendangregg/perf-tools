@@ -257,6 +257,9 @@ Tracing kprobe myprobe. Ctrl-C to end.
 ^C
 Ending tracing...
 
-Great. Note that this mode (without a duration) prints events as they happen,
+Great. This output includes the function we are returning to, in most cases,
+submit_bh().
+
+Note that this mode (without a duration) prints events as they happen,
 so the overheads can be high for frequent events. You could try the -d mode,
 which buffers in-kernel.
