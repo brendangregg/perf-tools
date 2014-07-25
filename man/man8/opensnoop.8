@@ -3,7 +3,7 @@
 opensnoop \- trace open() syscalls with file details. Uses Linux ftrace.
 .SH SYNOPSIS
 .B opensnoop
-[\-htx] [\-d secs] [\-f file] [\-p pid] [\-n name]
+[\-htx] [\-d secs] [\-p pid] [\-n name] [filename]
 .SH DESCRIPTION
 This traces open() syscalls, showing the file name (pathname) and returned file
 descriptor number (or \-1, for error).
@@ -31,10 +31,6 @@ The ftrace buffer has a fixed size per-CPU (see
 /sys/kernel/debug/tracing/buffer_size_kb). If you think events are missing,
 try increasing that size.
 .TP
-\-f file
-Only show open()s which match this filename. Partial strings and regular
-expressions are allowed. This is post-filtered using awk.
-.TP
 \-h
 Print usage message.
 .TP
@@ -50,19 +46,31 @@ Include timestamps, in seconds.
 .TP
 \-x
 Only print failed open()s.
+.TP
+filename
+Only show open()s which match this filename. Partial strings and regular
+expressions are allowed. This is post-filtered using awk.
 .SH EXAMPLES
 .TP
 Trace all open() syscalls with details:
+#
 .B opensnoop
 .TP
 Only trace open()s for PID 81:
+#
 .B opensnoop -p 81
 .TP
 Trace failed open() syscalls:
+#
 .B opensnoop -x
 .TP
-Trace open() syscalls for filenames containing "log":
-.B opensnoop -f log
+Trace open() syscalls for filenames containing "conf":
+#
+.B opensnoop conf
+.TP
+Trace open() syscalls for filenames ending in "log":
+#
+.B opensnoop 'log$'
 .SH FIELDS
 .TP
 TIMEs

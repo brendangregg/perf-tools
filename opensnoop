@@ -13,7 +13,7 @@
 # It is a workaround, and proof of concept for ftrace, until more kernel tracing
 # functionality is available.
 #
-# USAGE: ./opensnoop [-htx] [-d secs] [-f file] [-p pid] [-n name]
+# USAGE: ./opensnoop [-htx] [-d secs] [-p pid] [-n name] [filename]
 #
 # Run "opensnoop -h" for full usage.
 #
@@ -54,19 +54,20 @@ trap ':' INT QUIT TERM PIPE HUP	# sends execution to end tracing section
 
 function usage {
 	cat <<-END >&2
-	USAGE: opensnoop [-htx] [-d secs] [-f file] [-p PID] [-n name]
+	USAGE: opensnoop [-htx] [-d secs] [-p PID] [-n name] [filename]
 	                 -d seconds      # trace duration, and use buffers
-	                 -f file         # match filename (partials ok)
 	                 -n name         # process name to match on I/O issue
 	                 -p PID          # PID to match on I/O issue
 	                 -t              # include time (seconds)
 	                 -x              # only show failed opens
 	                 -h              # this usage message
+	                 filename        # match filename (partials, REs, ok)
 	  eg,
 	       opensnoop                 # watch open()s live (unbuffered)
 	       opensnoop -d 1            # trace 1 sec (buffered)
-	       opensnoop -f conf         # trace filenames containing "conf"
 	       opensnoop -p 181          # trace I/O issued by PID 181 only
+	       opensnoop conf            # trace filenames containing "conf"
+	       opensnoop 'log$'          # filenames ending in "log"
 END
 	exit
 }
@@ -107,11 +108,10 @@ function edie {
 }
 
 ### process options
-while getopts d:f:hn:p:tx opt
+while getopts d:hn:p:tx opt
 do
 	case $opt in
 	d)	opt_duration=1; duration=$OPTARG ;;
-	f)	opt_file=1; file=$OPTARG ;;
 	n)	opt_name=1; name=$OPTARG ;;
 	p)	opt_pid=1; pid=$OPTARG ;;
 	t)	opt_time=1 ;;
@@ -120,6 +120,12 @@ do
 	esac
 done
 shift $(( $OPTIND - 1 ))
+if (( $# )); then
+	opt_file=1
+	file=$1
+	shift
+fi
+(( $# )) && usage
 
 ### option logic
 (( opt_pid && opt_name )) && die "ERROR: use either -p or -n."
