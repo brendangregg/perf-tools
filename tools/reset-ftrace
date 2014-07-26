@@ -115,5 +115,6 @@ cd $tracing || die "ERROR: accessing tracing. Root user? Kernel has FTRACE?"
 writefile current_tracer nop
 writefile set_ftrace_filter
 writefile set_ftrace_pid
+writefile events/enable 0
 writefile kprobe_events
 vecho "Done."
