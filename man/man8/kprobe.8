@@ -5,9 +5,11 @@ kprobe \- trace a given kprobe definition. Kernel dynamic tracing. Uses Linux ft
 .B kprobe
 [\-hHsv] [\-d secs] [\-p PIDs] kprobe_definition [filter]
 .SH DESCRIPTION
-This will create, trace, then destroy a given kprobe. See
+This will create, trace, then destroy a given kprobe definition. See
 Documentation/trace/kprobetrace.txt in the Linux kernel source for the
-syntax of a kprobe definition.
+syntax of a kprobe definition, and "kprobe -h" for examples. With this tool,
+the probe alias is optional (it will become to kprobe:<funcname> if not
+specified).
 
 WARNING: This uses kernel dynamic tracing, which can cause cause kernel panics
 or freezes. Test, and know what you are doing, before use.
@@ -50,7 +52,9 @@ Only trace kernel functions when this process ID is on-CPU.
 .TP
 kprobe_definition
 A full kprobe definition, as documented by Documentation/trace/kprobetrace.txt
-in the Linux kernel source. See the EXAMPLES section.
+in the Linux kernel source. Note that the probe alias name is optional with
+kprobe(8), and if not specified, the tracepoint will become kprobe:<funcname>.
+See the EXAMPLES section.
 .TP
 filter
 An ftrace filter definition.
@@ -60,7 +64,19 @@ names and platform's register usage. If using platform specific registers
 becomes too painful in practice, consider a kernel debuginfo-based tracer,
 which can trace variables names instead. For example, perf_events.
 .TP
-Trace do_sys_open() return values:
+Trace do_sys_open() entry:
+#
+.B kprobe p:do_sys_open
+.TP
+Trace do_sys_open() return:
+#
+.B kprobe r:do_sys_open
+.TP
+Trace do_sys_open() return value:
+#
+.B kprobe 'r:do_sys_open $retval'
+.TP
+Trace do_sys_open() return value, with a custom probe alias "myopen":
 #
 .B kprobe 'r:myopen do_sys_open $retval'
 .TP

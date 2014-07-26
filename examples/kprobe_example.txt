@@ -1,6 +1,61 @@
 Demonstrations of kprobe, the Linux ftrace version.
 
-This traces do_sys_open() returns, showing the return value:
+This traces the kernel do_sys_open() function, when it is called:
+
+# ./kprobe p:do_sys_open
+Tracing kprobe do_sys_open. Ctrl-C to end.
+          kprobe-26042 [001] d... 6910441.001452: do_sys_open: (do_sys_open+0x0/0x220)
+          kprobe-26042 [001] d... 6910441.001475: do_sys_open: (do_sys_open+0x0/0x220)
+          kprobe-26042 [001] d... 6910441.001866: do_sys_open: (do_sys_open+0x0/0x220)
+          kprobe-26042 [001] d... 6910441.001966: do_sys_open: (do_sys_open+0x0/0x220)
+       supervise-1689  [000] d... 6910441.083302: do_sys_open: (do_sys_open+0x0/0x220)
+       supervise-1693  [001] d... 6910441.083530: do_sys_open: (do_sys_open+0x0/0x220)
+       supervise-1689  [000] d... 6910441.083759: do_sys_open: (do_sys_open+0x0/0x220)
+       supervise-1693  [001] d... 6910441.083877: do_sys_open: (do_sys_open+0x0/0x220)
+[...]
+
+The "p:" is for creating a probe. Use "r:" to probe the return of the function:
+
+# ./kprobe r:do_sys_open
+Tracing kprobe do_sys_open. Ctrl-C to end.
+          kprobe-29475 [001] d... 6910688.229777: do_sys_open: (SyS_open+0x1e/0x20 <- do_sys_open)
+           <...>-29476 [001] d... 6910688.231101: do_sys_open: (SyS_open+0x1e/0x20 <- do_sys_open)
+           <...>-29476 [001] d... 6910688.231123: do_sys_open: (SyS_open+0x1e/0x20 <- do_sys_open)
+           <...>-29476 [001] d... 6910688.231530: do_sys_open: (SyS_open+0x1e/0x20 <- do_sys_open)
+           <...>-29476 [001] d... 6910688.231624: do_sys_open: (SyS_open+0x1e/0x20 <- do_sys_open)
+       supervise-1685  [001] d... 6910688.328776: do_sys_open: (SyS_open+0x1e/0x20 <- do_sys_open)
+       supervise-1689  [000] d... 6910688.328780: do_sys_open: (SyS_open+0x1e/0x20 <- do_sys_open)
+[...]
+
+This output includes the function that the traced function is returning to.
+
+
+The trace output can be a little different between kernel versions. Use -H to
+print the header:
+
+# ./kprobe -H p:do_sys_open
+Tracing kprobe do_sys_open. Ctrl-C to end.
+# tracer: nop
+#
+# entries-in-buffer/entries-written: 4/4   #P:2
+#
+#                              _-----=> irqs-off
+#                             / _----=> need-resched
+#                            | / _---=> hardirq/softirq
+#                            || / _--=> preempt-depth
+#                            ||| /     delay
+#           TASK-PID   CPU#  ||||    TIMESTAMP  FUNCTION
+#              | |       |   ||||       |         |
+          kprobe-27952 [001] d... 6910580.008086: do_sys_open: (do_sys_open+0x0/0x220)
+          kprobe-27952 [001] d... 6910580.008109: do_sys_open: (do_sys_open+0x0/0x220)
+          kprobe-27952 [001] d... 6910580.008483: do_sys_open: (do_sys_open+0x0/0x220)
+[...]
+
+These columns are explained in the kernel source under Documentation/trace/ftrace.txt.
+
+
+This traces do_sys_open() returns, using a probe alias "myopen", and showing
+the return value ($retval):
 
 # ./kprobe 'r:myopen do_sys_open $retval'
 Tracing kprobe myopen. Ctrl-C to end.
@@ -24,12 +79,13 @@ Tracing kprobe myopen. Ctrl-C to end.
 ^C
 Ending tracing...
 
-The syntax for the kprobe definition is the same as can be written to the
-/sys/kernel/debug/tracing/kprobe_events file, and is documented in the Linux
-kernel source under Documentation/trace/kprobetrace.txt.
+The string specified, 'r:myopen do_sys_open $retval', is a kprobe definition,
+and is the same as those documented in the Linux kernel source under
+Documentation/trace/kprobetrace.txt, which can be written to the
+/sys/kernel/debug/tracing/kprobe_events file.
 
-This example probe was named "myopen" (which is arbitrary). You can also provide
-arbitrary names for arguments. Eg:
+Apart from probe name aliases, you can also provide arbitrary names for
+arguments. Eg, instead of the "arg1" default, calling it "rval":
 
 # ./kprobe 'r:myopen do_sys_open rval=$retval'
 Tracing kprobe myopen. Ctrl-C to end.
@@ -87,29 +143,6 @@ Tracing kprobe myopen. Ctrl-C to end.
 
 As mentioned previously, the %si register may be different on your platform.
 In this example, I cast it as a string.
-
-
-The -H option will show the headings:
-
-# ./kprobe -H 'p:myopen do_sys_open filename=+0(%si):string' 
-Tracing kprobe myopen. Ctrl-C to end.
-# tracer: nop
-#
-# entries-in-buffer/entries-written: 4/4   #P:2
-#
-#                              _-----=> irqs-off
-#                             / _----=> need-resched
-#                            | / _---=> hardirq/softirq
-#                            || / _--=> preempt-depth
-#                            ||| /     delay
-#           TASK-PID   CPU#  ||||    TIMESTAMP  FUNCTION
-#              | |       |   ||||       |         |
-          kprobe-1460  [001] d... 6593814.070876: myopen: (do_sys_open+0x0/0x220) filename="/etc/ld.so.cache"
-          kprobe-1460  [001] d... 6593814.070898: myopen: (do_sys_open+0x0/0x220) filename="/lib/x86_64-linux-gnu/libc.so.6"
-          kprobe-1460  [001] d... 6593814.071256: myopen: (do_sys_open+0x0/0x220) filename="/usr/lib/locale/locale-archive"
-          kprobe-1460  [001] d... 6593814.071355: myopen: (do_sys_open+0x0/0x220) filename="trace"
-          kprobe-1460  [001] d... 6593814.070876: myopen: (do_sys_open+0x0/0x220) filename="/etc/ld.so.cache"
-[...]
 
 
 Specifying a duration will buffer in-kernel (reducing overhead), and write at

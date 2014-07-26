@@ -5,7 +5,9 @@
 #
 # This will create, trace, then destroy a given kprobe definition. See
 # Documentation/trace/kprobetrace.txt in the Linux kernel source for the
-# syntax of a kprobe definition.
+# syntax of a kprobe definition, and "kprobe -h" for examples. With this tool,
+# the probe alias is optional (it will become to kprobe:<funcname> if not
+# specified).
 #
 # USAGE: ./kprobe [-hHsv] [-d secs] [-p pid] kprobe_definition [filter]
 #
@@ -61,14 +63,22 @@ function usage {
 	Note that these examples may need modification to match your kernel
 	version's function names and platform's register usage.
 	   eg,
-	       kprobe 'r:myopen do_sys_open \$retval'
+	       kprobe p:do_sys_open
+	                                 # trace open() entry
+	       kprobe r:do_sys_open
+	                                 # trace open() return
+	       kprobe 'r:do_sys_open \$retval'
 	                                 # trace open() return value
+	       kprobe 'r:myopen do_sys_open \$retval'
+	                                 # use a custom probe name
 	       kprobe 'p:myopen do_sys_open mode=%cx:u16'
 	                                 # trace open() file mode
 	       kprobe 'p:myopen do_sys_open filename=+0(%si):string'
 	                                 # trace open() with filename
 	       kprobe -s 'p:myprobe tcp_retransmit_skb'
 	                                 # show kernel stacks
+
+	See the man page and example file for more info.
 END
 	exit
 }
@@ -140,8 +150,13 @@ if [[ "$kprobe" != p:* && "$kprobe" != r:* ]]; then
 	echo >&2 "ERROR: invalid kprobe definition (should start with p: or r:)"
 	usage
 fi
-kname=${kprobe#*:}
-kname=${kname%% *}
+krest=${kprobe#*:}
+kname=${krest%% *}
+if [[ "$krest" != *\ [a-zA-Z]* ]]; then
+	# if probe name unspecified, default to function name
+	ktype=${kprobe%%:*}
+	kprobe="$ktype:$kname $krest"
+fi
 if (( !opt_view )); then
 	if (( opt_duration )); then
 		echo "Tracing kprobe $kname for $duration seconds (buffered)..."
