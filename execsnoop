@@ -238,6 +238,7 @@ fi ) | $awk -v o=$offset -v opt_name=$opt_name -v name=$name \
 		sub(/.* child_pid=/, "", cpid)
 		sub(/ .*/, "", cpid)
 		getppid[cpid] = pid
+		delete seen[pid]
 	}
 
 	$1 != "#" && $(4+o) ~ kname {
@@ -272,8 +273,10 @@ fi ) | $awk -v o=$offset -v opt_name=$opt_name -v name=$name \
 		printf "%6s %6d %s\n", pid, getppid[pid], args
 		if (!opt_duration)
 			fflush()
-		if (!opt_reexec)
+		if (!opt_reexec) {
 			seen[pid] = 1
+			delete getppid[pid]
+		}
 	}
 
 	$0 ~ /LOST.*EVENT[S]/ { print "WARNING: " $0 > "/dev/stderr" }
