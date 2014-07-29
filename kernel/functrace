@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # functrace - trace kernel function calls matching specified wildcards.
-#             A hack using Linux ftrace.
+#             Uses Linux ftrace.
 #
 # This is a proof of concept using Linux ftrace capabilities on older kernels.
 #
