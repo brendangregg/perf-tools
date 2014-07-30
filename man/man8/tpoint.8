@@ -110,7 +110,15 @@ so. If needed, you can try the "\-d secs" option, which buffers events
 instead, reducing overhead. If you think the buffer option is losing events,
 try increasing the buffer size (buffer_size_kb).
 
-Consider using perf_events, which manages buffers differently and more
+Before using tpoint(8), you can use perf_events to count the rate of events
+for the tracepoint of interest, to gauge overhead. For example:
+
+.B perf stat \-e block:block_rq_issue \-a sleep 5
+
+That counts the occurrences of the block:block_rq_issue tracepoint for
+5 seconds.
+
+Also consider using perf_events, which manages buffers differently and more
 efficiently, for higher frequency applications.
 .SH SOURCE
 This is from the perf-tools collection:

@@ -6,6 +6,7 @@
 # This will enable a given tracepoint, print events, then disable the tracepoint
 # when the program ends. This is like a simple version of the "perf" command for
 # printing live tracepoint events only. Wildcards are currently not supported.
+# If this is insufficient for any reason, use the perf command instead.
 #
 # USAGE: ./tpoint [-hHsv] [-d secs] [-p pid] tracepoint [filter]
 #        ./tpoint -l
@@ -14,6 +15,13 @@
 #
 # I wrote this because I often needed a quick way to dump stack traces for a
 # given tracepoint.
+#
+# OVERHEADS: Relative to the frequency of traced events. You might want to
+# check their frequency beforehand, using perf_events. Eg:
+#
+#	perf stat -e block:block_rq_issue -a sleep 5
+#
+# To count occurrences of that tracepoint for 5 seconds.
 #
 # REQUIREMENTS: FTRACE and tracepoints, which you may already have on recent
 # kernel versions.
