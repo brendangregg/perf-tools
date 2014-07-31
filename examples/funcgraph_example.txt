@@ -1533,3 +1533,535 @@ by completing a 19 second read (time between commands), then has a series of
 100 to 200 ms reads (inter-keystroke latency).
 
 The function times printed are inclusive of their children.
+
+
+The -c option will print on-CPU times only, excluding sleeping or blocking
+events from the function duration times. Eg:
+
+# ./funcgraph -ctp 25285 vfs_read
+Tracing "vfs_read" for PID 25285... Ctrl-C to end.
+7338520.591816 |   0)               |              finish_task_switch() {
+7338520.591820 |   0)               |                xen_evtchn_do_upcall() {
+7338520.591821 |   0)               |                  irq_enter() {
+7338520.591821 |   0)   0.134 us    |                    rcu_irq_enter();
+7338520.591822 |   0)   0.823 us    |                  }
+7338520.591822 |   0)   0.055 us    |                  exit_idle();
+7338520.591822 |   0)               |                  __xen_evtchn_do_upcall() {
+7338520.591823 |   0)               |                    evtchn_2l_handle_events() {
+7338520.591823 |   0)   0.051 us    |                      irq_from_virq();
+7338520.591823 |   0)               |                      evtchn_from_irq() {
+7338520.591823 |   0)               |                        irq_get_irq_data() {
+7338520.591824 |   0)   0.064 us    |                          irq_to_desc();
+7338520.591824 |   0)   0.572 us    |                        }
+7338520.591824 |   0)   0.973 us    |                      }
+7338520.591825 |   0)               |                      get_evtchn_to_irq() {
+7338520.591825 |   0)   0.049 us    |                        evtchn_2l_max_channels();
+7338520.591825 |   0)   0.386 us    |                      }
+7338520.591825 |   0)               |                      generic_handle_irq() {
+7338520.591825 |   0)   0.061 us    |                        irq_to_desc();
+7338520.591826 |   0)               |                        handle_percpu_irq() {
+7338520.591826 |   0)               |                          ack_dynirq() {
+7338520.591826 |   0)               |                            evtchn_from_irq() {
+7338520.591826 |   0)               |                              irq_get_irq_data() {
+7338520.591827 |   0)   0.050 us    |                                irq_to_desc();
+7338520.591827 |   0)   0.441 us    |                              }
+7338520.591827 |   0)   0.748 us    |                            }
+7338520.591827 |   0)   0.048 us    |                            irq_move_irq();
+7338520.591828 |   0)   0.053 us    |                            evtchn_2l_clear_pending();
+7338520.591828 |   0)   1.810 us    |                          }
+7338520.591828 |   0)               |                          handle_irq_event_percpu() {
+7338520.591828 |   0)               |                            xen_irq_work_interrupt() {
+7338520.591829 |   0)               |                              irq_enter() {
+7338520.591829 |   0)   0.069 us    |                                rcu_irq_enter();
+7338520.591829 |   0)   0.386 us    |                              }
+7338520.591830 |   0)               |                              __wake_up() {
+7338520.591830 |   0)   0.060 us    |                                _raw_spin_lock_irqsave();
+7338520.591830 |   0)               |                                __wake_up_common() {
+7338520.591830 |   0)               |                                  autoremove_wake_function() {
+7338520.591831 |   0)               |                                    default_wake_function() {
+7338520.591831 |   0)               |                                      try_to_wake_up() {
+7338520.591831 |   0)   0.223 us    |                                        _raw_spin_lock_irqsave();
+7338520.591832 |   0)   0.243 us    |                                        task_waking_fair();
+7338520.591832 |   0)               |                                        select_task_rq_fair() {
+7338520.591833 |   0)   0.063 us    |                                          source_load();
+7338520.591833 |   0)   0.059 us    |                                          target_load();
+7338520.591834 |   0)   0.060 us    |                                          idle_cpu();
+7338520.591834 |   0)   0.059 us    |                                          cpus_share_cache();
+7338520.591834 |   0)   0.085 us    |                                          idle_cpu();
+7338520.591835 |   0)   2.176 us    |                                        }
+7338520.591835 |   0)   0.050 us    |                                        _raw_spin_lock();
+7338520.591835 |   0)               |                                        ttwu_do_activate.constprop.124() {
+7338520.591835 |   0)               |                                          activate_task() {
+7338520.591836 |   0)               |                                            enqueue_task() {
+7338520.591836 |   0)   0.197 us    |                                              update_rq_clock();
+7338520.591836 |   0)               |                                              enqueue_task_fair() {
+7338520.591836 |   0)               |                                                enqueue_entity() {
+7338520.591837 |   0)   0.118 us    |                                                  update_curr();
+7338520.591837 |   0)   0.060 us    |                                                  __compute_runnable_contrib.part.51();
+7338520.591838 |   0)   0.052 us    |                                                  __update_entity_load_avg_contrib();
+7338520.591838 |   0)   0.132 us    |                                                  update_cfs_rq_blocked_load();
+7338520.591838 |   0)   0.068 us    |                                                  account_entity_enqueue();
+7338520.591839 |   0)   0.327 us    |                                                  update_cfs_shares();
+7338520.591839 |   0)   0.055 us    |                                                  place_entity();
+7338520.591840 |   0)   0.086 us    |                                                  __enqueue_entity();
+7338520.591840 |   0)   0.069 us    |                                                  update_cfs_rq_blocked_load();
+7338520.591840 |   0)   3.870 us    |                                                }
+7338520.591841 |   0)               |                                                enqueue_entity() {
+7338520.591841 |   0)   0.050 us    |                                                  update_curr();
+7338520.591841 |   0)   0.048 us    |                                                  __compute_runnable_contrib.part.51();
+7338520.591842 |   0)   0.079 us    |                                                  __update_entity_load_avg_contrib();
+7338520.591842 |   0)   0.068 us    |                                                  update_cfs_rq_blocked_load();
+7338520.591842 |   0)   0.072 us    |                                                  account_entity_enqueue();
+7338520.591843 |   0)   0.068 us    |                                                  update_cfs_shares();
+7338520.591844 |   0)   0.123 us    |                                                  place_entity();
+7338520.591844 |   0)   0.051 us    |                                                  __enqueue_entity();
+7338520.591845 |   0)   3.919 us    |                                                }
+7338520.591845 |   0)   0.059 us    |                                                hrtick_update();
+7338520.591845 |   0)   8.895 us    |                                              }
+7338520.591846 |   0)   9.770 us    |                                            }
+7338520.591846 |   0)   10.197 us   |                                          }
+7338520.591846 |   0)               |                                          ttwu_do_wakeup() {
+7338520.591846 |   0)               |                                            check_preempt_curr() {
+7338520.591846 |   0)               |                                              resched_task() {
+7338520.591847 |   0)               |                                                xen_smp_send_reschedule() {
+7338520.591847 |   0)               |                                                  xen_send_IPI_one() {
+7338520.591847 |   0)               |                                                    notify_remote_via_irq() {
+7338520.591847 |   0)               |                                                      evtchn_from_irq() {
+7338520.591848 |   0)               |                                                        irq_get_irq_data() {
+7338520.591848 |   0)   0.051 us    |                                                          irq_to_desc();
+7338520.591848 |   0)   0.503 us    |                                                        }
+7338520.591848 |   0)   1.031 us    |                                                      }
+7338520.591849 |   0)   2.112 us    |                                                    }
+7338520.591849 |   0)   2.484 us    |                                                  }
+7338520.591850 |   0)   2.851 us    |                                                }
+7338520.591850 |   0)   3.311 us    |                                              }
+7338520.591850 |   0)   3.828 us    |                                            }
+7338520.591851 |   0)   4.788 us    |                                          }
+7338520.591851 |   0)   15.731 us   |                                        }
+7338520.591851 |   0)   0.074 us    |                                        _raw_spin_unlock();
+7338520.591852 |   0)   0.156 us    |                                        ttwu_stat();
+7338520.591852 |   0)   0.080 us    |                                        _raw_spin_unlock_irqrestore();
+7338520.591853 |   0)   21.807 us   |                                      }
+7338520.591853 |   0)   22.286 us   |                                    }
+7338520.591853 |   0)   22.738 us   |                                  }
+7338520.591854 |   0)   23.387 us   |                                }
+7338520.591854 |   0)   0.105 us    |                                _raw_spin_unlock_irqrestore();
+7338520.591854 |   0)   24.698 us   |                              }
+7338520.591855 |   0)               |                              irq_exit() {
+7338520.591855 |   0)   0.086 us    |                                idle_cpu();
+7338520.591856 |   0)   0.105 us    |                                rcu_irq_exit();
+7338520.591856 |   0)   1.272 us    |                              }
+7338520.591856 |   0)   27.818 us   |                            }
+7338520.591857 |   0)   0.140 us    |                            add_interrupt_randomness();
+7338520.591857 |   0)   0.084 us    |                            note_interrupt();
+7338520.591858 |   0)   29.866 us   |                          }
+7338520.591858 |   0)   32.390 us   |                        }
+7338520.591859 |   0)   33.204 us   |                      }
+7338520.591859 |   0)   36.137 us   |                    }
+7338520.591859 |   0)   36.574 us   |                  }
+7338520.591859 |   0)               |                  irq_exit() {
+7338520.591860 |   0)   0.073 us    |                    idle_cpu();
+7338520.591860 |   0)   0.076 us    |                    rcu_irq_exit();
+7338520.591861 |   0)   1.091 us    |                  }
+7338520.591861 |   0)   40.156 us   |                }
+7338520.591862 |   0)   41.874 us   |              }
+7338520.591862 |   0)   75.633 us   |            } /* __schedule */
+7338520.591862 |   0)   76.182 us   |          } /* schedule */
+7338520.591863 |   0)   76.965 us   |        } /* schedule_timeout */
+7338520.591863 |   0)   0.070 us    |        down_read();
+7338520.591864 |   0)               |        copy_from_read_buf() {
+7338520.591865 |   0)               |          tty_audit_add_data() {
+7338520.591865 |   0)   0.232 us    |            _raw_spin_lock_irqsave();
+7338520.591866 |   0)   0.079 us    |            _raw_spin_unlock_irqrestore();
+7338520.591867 |   0)   0.122 us    |            _raw_spin_lock_irqsave();
+7338520.591867 |   0)   0.066 us    |            _raw_spin_unlock_irqrestore();
+7338520.591868 |   0)   2.642 us    |          }
+7338520.591868 |   0)   3.886 us    |        }
+7338520.591868 |   0)   0.149 us    |        copy_from_read_buf();
+7338520.591869 |   0)   0.072 us    |        n_tty_set_room();
+7338520.591870 |   0)   0.071 us    |        n_tty_write_wakeup();
+7338520.591870 |   0)               |        __wake_up() {
+7338520.591871 |   0)   0.071 us    |          _raw_spin_lock_irqsave();
+7338520.591872 |   0)               |          __wake_up_common() {
+7338520.591872 |   0)   0.097 us    |            pollwake();
+7338520.591873 |   0)   0.739 us    |          }
+7338520.591873 |   0)   0.066 us    |          _raw_spin_unlock_irqrestore();
+7338520.591874 |   0)   3.043 us    |        }
+7338520.591874 |   0)   0.075 us    |        n_tty_set_room();
+7338520.591875 |   0)   0.106 us    |        up_read();
+7338520.591875 |   0)               |        remove_wait_queue() {
+7338520.591875 |   0)   0.078 us    |          _raw_spin_lock_irqsave();
+7338520.591876 |   0)   0.075 us    |          _raw_spin_unlock_irqrestore();
+7338520.591877 |   0)   1.165 us    |        }
+7338520.591877 |   0)   0.137 us    |        mutex_unlock();
+7338520.591877 |   0)   98.321 us   |      } /* n_tty_read */
+7338520.591878 |   0)               |      tty_ldisc_deref() {
+7338520.591878 |   0)   0.072 us    |        ldsem_up_read();
+7338520.591879 |   0)   0.561 us    |      }
+7338520.591879 |   0)   0.090 us    |      get_seconds();
+7338520.591880 |   0)   102.599 us  |    } /* tty_read */
+7338520.591880 |   0)   0.362 us    |    __fsnotify_parent();
+7338520.591881 |   0)   0.171 us    |    fsnotify();
+7338520.591882 |   0)   109.640 us  |  } /* vfs_read */
+7338520.591951 |   0)               |  vfs_read() {
+7338520.591951 |   0)               |    rw_verify_area() {
+7338520.591952 |   0)               |      security_file_permission() {
+7338520.591952 |   0)               |        apparmor_file_permission() {
+7338520.591952 |   0)   0.174 us    |          common_file_perm();
+7338520.591953 |   0)   0.762 us    |        }
+7338520.591953 |   0)   0.126 us    |        __fsnotify_parent();
+7338520.591954 |   0)   0.088 us    |        fsnotify();
+7338520.591954 |   0)   2.609 us    |      }
+7338520.591955 |   0)   3.351 us    |    }
+7338520.591955 |   0)               |    tty_read() {
+7338520.591956 |   0)   0.081 us    |      tty_paranoia_check();
+7338520.591956 |   0)               |      tty_ldisc_ref_wait() {
+7338520.591956 |   0)   0.090 us    |        ldsem_down_read();
+7338520.591957 |   0)   0.633 us    |      }
+7338520.591957 |   0)               |      n_tty_read() {
+7338520.591958 |   0)   0.073 us    |        _raw_spin_lock_irq();
+7338520.591958 |   0)   0.089 us    |        mutex_lock_interruptible();
+7338520.591959 |   0)   0.080 us    |        down_read();
+7338520.591960 |   0)               |        add_wait_queue() {
+7338520.591960 |   0)   0.084 us    |          _raw_spin_lock_irqsave();
+7338520.591960 |   0)   0.087 us    |          _raw_spin_unlock_irqrestore();
+7338520.591961 |   0)   1.215 us    |        }
+7338520.591961 |   0)   0.078 us    |        tty_hung_up_p();
+7338520.591962 |   0)   0.084 us    |        n_tty_set_room();
+7338520.591962 |   0)   0.072 us    |        up_read();
+7338520.591963 |   0)               |        schedule_timeout() {
+7338520.591963 |   0)               |          schedule() {
+7338520.591964 |   0)               |            __schedule() {
+7338520.591964 |   0)   0.084 us    |              rcu_note_context_switch();
+7338520.591965 |   0)   0.086 us    |              _raw_spin_lock_irq();
+7338520.591965 |   0)               |              deactivate_task() {
+7338520.591966 |   0)               |                dequeue_task() {
+7338520.591966 |   0)   0.171 us    |                  update_rq_clock();
+7338520.591966 |   0)               |                  dequeue_task_fair() {
+7338520.591967 |   0)               |                    dequeue_entity() {
+7338520.591967 |   0)               |                      update_curr() {
+7338520.591967 |   0)   0.248 us    |                        cpuacct_charge();
+7338520.591968 |   0)   0.974 us    |                      }
+7338520.591969 |   0)   0.074 us    |                      update_cfs_rq_blocked_load();
+7338520.591969 |   0)   0.081 us    |                      clear_buddies();
+7338520.591970 |   0)   0.094 us    |                      account_entity_dequeue();
+7338520.591971 |   0)               |                      update_cfs_shares() {
+7338520.591971 |   0)   0.096 us    |                        update_curr();
+7338520.591971 |   0)   0.093 us    |                        account_entity_dequeue();
+7338520.591972 |   0)   0.079 us    |                        account_entity_enqueue();
+7338520.591972 |   0)   1.743 us    |                      }
+7338520.591972 |   0)   5.515 us    |                    }
+7338520.591973 |   0)               |                    dequeue_entity() {
+7338520.591973 |   0)   0.088 us    |                      update_curr();
+7338520.591974 |   0)   0.106 us    |                      update_cfs_rq_blocked_load();
+7338520.591975 |   0)   0.078 us    |                      clear_buddies();
+7338520.591975 |   0)   0.088 us    |                      account_entity_dequeue();
+7338520.591976 |   0)   0.091 us    |                      update_cfs_shares();
+7338520.591977 |   0)   3.639 us    |                    }
+7338520.591977 |   0)   0.078 us    |                    hrtick_update();
+7338520.591978 |   0)   10.851 us   |                  }
+7338520.591978 |   0)   11.992 us   |                }
+7338520.591978 |   0)   12.496 us   |              }
+7338520.591978 |   0)               |              pick_next_task_fair() {
+7338520.591979 |   0)   0.079 us    |                check_cfs_rq_runtime();
+7338520.591979 |   0)               |                pick_next_entity() {
+7338520.591979 |   0)   0.080 us    |                  clear_buddies();
+7338520.591980 |   0)   0.594 us    |                }
+7338520.591980 |   0)               |                put_prev_entity() {
+7338520.591980 |   0)   0.078 us    |                  check_cfs_rq_runtime();
+7338520.591981 |   0)   0.641 us    |                }
+7338520.591981 |   0)               |                put_prev_entity() {
+7338520.591982 |   0)   0.076 us    |                  check_cfs_rq_runtime();
+7338520.591982 |   0)   0.610 us    |                }
+7338520.591982 |   0)               |                set_next_entity() {
+7338520.591983 |   0)   0.097 us    |                  update_stats_wait_end();
+7338520.591983 |   0)   0.744 us    |                }
+7338520.591984 |   0)   5.115 us    |              }
+7338520.591984 |   0)   0.076 us    |              paravirt_start_context_switch();
+7338520.591985 |   0)   0.086 us    |              xen_read_cr0();
+7338520.591986 |   0)               |              xen_write_cr0() {
+7338520.591986 |   0)   0.078 us    |                paravirt_get_lazy_mode();
+7338520.591987 |   0)   0.086 us    |                __xen_mc_entry();
+7338520.591987 |   0)   0.078 us    |                paravirt_get_lazy_mode();
+7338520.591988 |   0)   1.698 us    |              }
+7338520.591988 |   0)               |              xen_load_sp0() {
+7338520.591988 |   0)   0.074 us    |                paravirt_get_lazy_mode();
+7338520.591989 |   0)   0.084 us    |                __xen_mc_entry();
+7338520.591989 |   0)   0.084 us    |                paravirt_get_lazy_mode();
+7338520.591990 |   0)   1.724 us    |              }
+7338520.591990 |   0)               |              xen_load_tls() {
+7338520.591991 |   0)   0.080 us    |                paravirt_get_lazy_mode();
+7338520.591991 |   0)   0.088 us    |                paravirt_get_lazy_mode();
+7338520.591992 |   0)   0.140 us    |                load_TLS_descriptor();
+7338520.591992 |   0)   0.079 us    |                load_TLS_descriptor();
+7338520.591993 |   0)   0.087 us    |                load_TLS_descriptor();
+7338520.591994 |   0)   0.078 us    |                paravirt_get_lazy_mode();
+7338520.591994 |   0)   3.666 us    |              }
+7338520.591995 |   0)               |              xen_end_context_switch() {
+7338520.591995 |   0)   0.644 us    |                xen_mc_flush();
+7338520.591996 |   0)   0.080 us    |                paravirt_end_context_switch();
+7338520.591997 |   0)   1.813 us    |              }
+7338520.855105 |   0)               |              finish_task_switch() {
+7338520.855110 |   0)               |                xen_evtchn_do_upcall() {
+7338520.855110 |   0)               |                  irq_enter() {
+7338520.855110 |   0)   0.137 us    |                    rcu_irq_enter();
+7338520.855111 |   0)   0.673 us    |                  }
+7338520.855111 |   0)   0.063 us    |                  exit_idle();
+7338520.855111 |   0)               |                  __xen_evtchn_do_upcall() {
+7338520.855112 |   0)               |                    evtchn_2l_handle_events() {
+7338520.855112 |   0)   0.050 us    |                      irq_from_virq();
+7338520.855112 |   0)               |                      evtchn_from_irq() {
+7338520.855112 |   0)               |                        irq_get_irq_data() {
+7338520.855113 |   0)   0.050 us    |                          irq_to_desc();
+7338520.855113 |   0)   0.568 us    |                        }
+7338520.855113 |   0)   0.895 us    |                      }
+7338520.855114 |   0)               |                      get_evtchn_to_irq() {
+7338520.855114 |   0)   0.048 us    |                        evtchn_2l_max_channels();
+7338520.855114 |   0)   0.386 us    |                      }
+7338520.855114 |   0)               |                      generic_handle_irq() {
+7338520.855114 |   0)   0.051 us    |                        irq_to_desc();
+7338520.855115 |   0)               |                        handle_percpu_irq() {
+7338520.855115 |   0)               |                          ack_dynirq() {
+7338520.855115 |   0)               |                            evtchn_from_irq() {
+7338520.855115 |   0)               |                              irq_get_irq_data() {
+7338520.855116 |   0)   0.058 us    |                                irq_to_desc();
+7338520.855117 |   0)   1.264 us    |                              }
+7338520.855117 |   0)   1.644 us    |                            }
+7338520.855117 |   0)   0.048 us    |                            irq_move_irq();
+7338520.855118 |   0)   0.050 us    |                            evtchn_2l_clear_pending();
+7338520.855118 |   0)   2.876 us    |                          }
+7338520.855118 |   0)               |                          handle_irq_event_percpu() {
+7338520.855119 |   0)               |                            xen_irq_work_interrupt() {
+7338520.855119 |   0)               |                              irq_enter() {
+7338520.855119 |   0)   0.055 us    |                                rcu_irq_enter();
+7338520.855119 |   0)   0.460 us    |                              }
+7338520.855120 |   0)               |                              __wake_up() {
+7338520.855120 |   0)   0.057 us    |                                _raw_spin_lock_irqsave();
+7338520.855120 |   0)               |                                __wake_up_common() {
+7338520.855121 |   0)               |                                  autoremove_wake_function() {
+7338520.855121 |   0)               |                                    default_wake_function() {
+7338520.855121 |   0)               |                                      try_to_wake_up() {
+7338520.855121 |   0)   0.203 us    |                                        _raw_spin_lock_irqsave();
+7338520.855122 |   0)   0.179 us    |                                        task_waking_fair();
+7338520.855123 |   0)               |                                        select_task_rq_fair() {
+7338520.855123 |   0)   0.048 us    |                                          source_load();
+7338520.855123 |   0)   0.059 us    |                                          target_load();
+7338520.855124 |   0)   0.059 us    |                                          idle_cpu();
+7338520.855124 |   0)   0.058 us    |                                          cpus_share_cache();
+7338520.855124 |   0)   0.058 us    |                                          idle_cpu();
+7338520.855125 |   0)   1.940 us    |                                        }
+7338520.855125 |   0)   0.057 us    |                                        _raw_spin_lock();
+7338520.855125 |   0)               |                                        ttwu_do_activate.constprop.124() {
+7338520.855125 |   0)               |                                          activate_task() {
+7338520.855126 |   0)               |                                            enqueue_task() {
+7338520.855126 |   0)   0.171 us    |                                              update_rq_clock();
+7338520.855126 |   0)               |                                              enqueue_task_fair() {
+7338520.855126 |   0)               |                                                enqueue_entity() {
+7338520.855127 |   0)   0.063 us    |                                                  update_curr();
+7338520.855127 |   0)   0.078 us    |                                                  __compute_runnable_contrib.part.51();
+7338520.855127 |   0)   0.066 us    |                                                  __update_entity_load_avg_contrib();
+7338520.855128 |   0)   0.061 us    |                                                  update_cfs_rq_blocked_load();
+7338520.855128 |   0)   0.072 us    |                                                  account_entity_enqueue();
+7338520.855128 |   0)   0.116 us    |                                                  update_cfs_shares();
+7338520.855129 |   0)   0.062 us    |                                                  place_entity();
+7338520.855129 |   0)   0.087 us    |                                                  __enqueue_entity();
+7338520.855129 |   0)   2.950 us    |                                                }
+7338520.855130 |   0)               |                                                enqueue_entity() {
+7338520.855130 |   0)   0.065 us    |                                                  update_curr();
+7338520.855130 |   0)   0.065 us    |                                                  update_cfs_rq_blocked_load();
+7338520.855130 |   0)   0.067 us    |                                                  account_entity_enqueue();
+7338520.855131 |   0)   0.084 us    |                                                  update_cfs_shares();
+7338520.855131 |   0)   0.112 us    |                                                  place_entity();
+7338520.855131 |   0)   0.051 us    |                                                  __enqueue_entity();
+7338520.855132 |   0)   2.074 us    |                                                }
+7338520.855132 |   0)   0.055 us    |                                                hrtick_update();
+7338520.855132 |   0)   5.983 us    |                                              }
+7338520.855133 |   0)   6.790 us    |                                            }
+7338520.855133 |   0)   7.138 us    |                                          }
+7338520.855133 |   0)               |                                          ttwu_do_wakeup() {
+7338520.855133 |   0)               |                                            check_preempt_curr() {
+7338520.855133 |   0)               |                                              resched_task() {
+7338520.855133 |   0)               |                                                xen_smp_send_reschedule() {
+7338520.855134 |   0)               |                                                  xen_send_IPI_one() {
+7338520.855134 |   0)               |                                                    notify_remote_via_irq() {
+7338520.855134 |   0)               |                                                      evtchn_from_irq() {
+7338520.855134 |   0)               |                                                        irq_get_irq_data() {
+7338520.855134 |   0)   0.057 us    |                                                          irq_to_desc();
+7338520.855135 |   0)   0.502 us    |                                                        }
+7338520.855135 |   0)   0.865 us    |                                                      }
+7338520.855136 |   0)   1.975 us    |                                                    } /* notify_remote_via_irq */
+7338520.855136 |   0)   2.350 us    |                                                  }
+7338520.855136 |   0)   2.723 us    |                                                }
+7338520.855136 |   0)   3.175 us    |                                              }
+7338520.855137 |   0)   3.620 us    |                                            }
+7338520.855138 |   0)   4.642 us    |                                          }
+7338520.855138 |   0)   12.409 us   |                                        }
+7338520.855138 |   0)   0.059 us    |                                        _raw_spin_unlock();
+7338520.855139 |   0)   0.108 us    |                                        ttwu_stat();
+7338520.855140 |   0)   0.073 us    |                                        _raw_spin_unlock_irqrestore();
+7338520.855140 |   0)   18.857 us   |                                      }
+7338520.855141 |   0)   19.415 us   |                                    }
+7338520.855141 |   0)   19.993 us   |                                  }
+7338520.855141 |   0)   20.587 us   |                                }
+7338520.855141 |   0)   0.070 us    |                                _raw_spin_unlock_irqrestore();
+7338520.855142 |   0)   21.858 us   |                              }
+7338520.855142 |   0)               |                              irq_exit() {
+7338520.855143 |   0)   0.084 us    |                                idle_cpu();
+7338520.855143 |   0)   0.082 us    |                                rcu_irq_exit();
+7338520.855144 |   0)   1.235 us    |                              }
+7338520.855144 |   0)   25.109 us   |                            }
+7338520.855144 |   0)   0.126 us    |                            add_interrupt_randomness();
+7338520.855145 |   0)   0.091 us    |                            note_interrupt();
+7338520.855145 |   0)   26.935 us   |                          }
+7338520.855146 |   0)   30.693 us   |                        }
+7338520.855146 |   0)   31.575 us   |                      }
+7338520.855146 |   0)   34.424 us   |                    }
+7338520.855147 |   0)   34.841 us   |                  }
+7338520.855147 |   0)               |                  irq_exit() {
+7338520.855147 |   0)   0.083 us    |                    idle_cpu();
+7338520.855148 |   0)   0.069 us    |                    rcu_irq_exit();
+7338520.855148 |   0)   1.056 us    |                  }
+7338520.855148 |   0)   38.284 us   |                }
+7338520.855149 |   0)   39.892 us   |              }
+7338520.855150 |   0)   72.181 us   |            }
+7338520.855150 |   0)   72.925 us   |          }
+7338520.855150 |   0)   73.638 us   |        }
+7338520.855151 |   0)   0.078 us    |        down_read();
+7338520.855152 |   0)               |        copy_from_read_buf() {
+7338520.855153 |   0)               |          tty_audit_add_data() {
+7338520.855153 |   0)   0.272 us    |            _raw_spin_lock_irqsave();
+7338520.855154 |   0)   0.063 us    |            _raw_spin_unlock_irqrestore();
+7338520.855155 |   0)   0.086 us    |            _raw_spin_lock_irqsave();
+7338520.855155 |   0)   0.067 us    |            _raw_spin_unlock_irqrestore();
+7338520.855156 |   0)   2.808 us    |          }
+7338520.855156 |   0)   4.330 us    |        }
+7338520.855156 |   0)   0.083 us    |        copy_from_read_buf();
+7338520.855157 |   0)   0.062 us    |        n_tty_set_room();
+7338520.855158 |   0)   0.079 us    |        n_tty_write_wakeup();
+7338520.855158 |   0)               |        __wake_up() {
+7338520.855158 |   0)   0.068 us    |          _raw_spin_lock_irqsave();
+7338520.855159 |   0)               |          __wake_up_common() {
+7338520.855159 |   0)   0.092 us    |            pollwake();
+7338520.855160 |   0)   0.643 us    |          }
+7338520.855160 |   0)   0.074 us    |          _raw_spin_unlock_irqrestore();
+7338520.855160 |   0)   2.040 us    |        }
+7338520.855161 |   0)   0.074 us    |        n_tty_set_room();
+7338520.855162 |   0)   0.073 us    |        up_read();
+7338520.855162 |   0)               |        remove_wait_queue() {
+7338520.855162 |   0)   0.084 us    |          _raw_spin_lock_irqsave();
+7338520.855163 |   0)   0.078 us    |          _raw_spin_unlock_irqrestore();
+7338520.855163 |   0)   1.166 us    |        }
+7338520.855164 |   0)   0.140 us    |        mutex_unlock();
+7338520.855164 |   0)   93.360 us   |      }
+7338520.855165 |   0)               |      tty_ldisc_deref() {
+7338520.855165 |   0)   0.070 us    |        ldsem_up_read();
+7338520.855166 |   0)   0.746 us    |      }
+7338520.855166 |   0)   0.071 us    |      get_seconds();
+7338520.855167 |   0)   97.713 us   |    }
+7338520.855167 |   0)   0.283 us    |    __fsnotify_parent();
+7338520.855168 |   0)   0.172 us    |    fsnotify();
+7338520.855168 |   0)   103.847 us  |  }
+7338520.855238 |   0)               |  vfs_read() {
+7338520.855239 |   0)               |    rw_verify_area() {
+7338520.855240 |   0)               |      security_file_permission() {
+7338520.855240 |   0)               |        apparmor_file_permission() {
+7338520.855240 |   0)   0.160 us    |          common_file_perm();
+7338520.855241 |   0)   0.770 us    |        }
+7338520.855241 |   0)   0.078 us    |        __fsnotify_parent();
+7338520.855242 |   0)   0.087 us    |        fsnotify();
+7338520.855243 |   0)   2.595 us    |      }
+7338520.855243 |   0)   4.148 us    |    }
+7338520.855243 |   0)               |    tty_read() {
+7338520.855244 |   0)   0.078 us    |      tty_paranoia_check();
+7338520.855244 |   0)               |      tty_ldisc_ref_wait() {
+7338520.855244 |   0)   0.084 us    |        ldsem_down_read();
+7338520.855245 |   0)   0.643 us    |      }
+7338520.855245 |   0)               |      n_tty_read() {
+7338520.855246 |   0)   0.079 us    |        _raw_spin_lock_irq();
+7338520.855247 |   0)   0.171 us    |        mutex_lock_interruptible();
+7338520.855247 |   0)   0.064 us    |        down_read();
+7338520.855248 |   0)               |        add_wait_queue() {
+7338520.855248 |   0)   0.078 us    |          _raw_spin_lock_irqsave();
+7338520.855249 |   0)   0.082 us    |          _raw_spin_unlock_irqrestore();
+7338520.855249 |   0)   1.076 us    |        }
+7338520.855250 |   0)   0.075 us    |        tty_hung_up_p();
+7338520.855250 |   0)   0.079 us    |        n_tty_set_room();
+7338520.855251 |   0)   0.075 us    |        up_read();
+7338520.855251 |   0)               |        schedule_timeout() {
+7338520.855252 |   0)               |          schedule() {
+7338520.855252 |   0)               |            __schedule() {
+7338520.855252 |   0)   0.084 us    |              rcu_note_context_switch();
+7338520.855253 |   0)   0.079 us    |              _raw_spin_lock_irq();
+7338520.855254 |   0)               |              deactivate_task() {
+7338520.855254 |   0)               |                dequeue_task() {
+7338520.855254 |   0)   0.219 us    |                  update_rq_clock();
+7338520.855255 |   0)               |                  dequeue_task_fair() {
+7338520.855255 |   0)               |                    dequeue_entity() {
+7338520.855255 |   0)               |                      update_curr() {
+7338520.855256 |   0)   0.186 us    |                        cpuacct_charge();
+7338520.855257 |   0)   0.924 us    |                      }
+7338520.855257 |   0)   0.078 us    |                      update_cfs_rq_blocked_load();
+7338520.855258 |   0)   0.078 us    |                      clear_buddies();
+7338520.855258 |   0)   0.083 us    |                      account_entity_dequeue();
+7338520.855259 |   0)               |                      update_cfs_shares() {
+7338520.855259 |   0)   0.105 us    |                        update_curr();
+7338520.855260 |   0)   0.093 us    |                        account_entity_dequeue();
+7338520.855260 |   0)   0.098 us    |                        account_entity_enqueue();
+7338520.855261 |   0)   1.825 us    |                      }
+7338520.855261 |   0)   5.574 us    |                    }
+7338520.855261 |   0)               |                    dequeue_entity() {
+7338520.855261 |   0)   0.086 us    |                      update_curr();
+7338520.855262 |   0)   0.127 us    |                      __update_entity_load_avg_contrib();
+7338520.855263 |   0)   0.070 us    |                      update_cfs_rq_blocked_load();
+7338520.855263 |   0)   0.066 us    |                      clear_buddies();
+7338520.855264 |   0)   0.082 us    |                      account_entity_dequeue();
+7338520.855264 |   0)   0.104 us    |                      update_cfs_shares();
+7338520.855265 |   0)   3.439 us    |                    }
+7338520.855265 |   0)   0.078 us    |                    hrtick_update();
+7338520.855266 |   0)   10.741 us   |                  }
+7338520.855266 |   0)   11.990 us   |                }
+7338520.855266 |   0)   12.580 us   |              }
+7338520.855267 |   0)               |              pick_next_task_fair() {
+7338520.855267 |   0)   0.074 us    |                check_cfs_rq_runtime();
+7338520.855268 |   0)               |                pick_next_entity() {
+7338520.855268 |   0)   0.078 us    |                  clear_buddies();
+7338520.855269 |   0)   0.696 us    |                }
+7338520.855269 |   0)               |                put_prev_entity() {
+7338520.855269 |   0)   0.084 us    |                  check_cfs_rq_runtime();
+7338520.855270 |   0)   0.628 us    |                }
+7338520.855270 |   0)               |                put_prev_entity() {
+7338520.855270 |   0)   0.074 us    |                  check_cfs_rq_runtime();
+7338520.855271 |   0)   0.575 us    |                }
+7338520.855271 |   0)               |                set_next_entity() {
+7338520.855272 |   0)   0.104 us    |                  update_stats_wait_end();
+7338520.855273 |   0)   0.834 us    |                }
+7338520.855273 |   0)   5.872 us    |              }
+7338520.855274 |   0)   0.079 us    |              paravirt_start_context_switch();
+7338520.855275 |   0)   0.080 us    |              xen_read_cr0();
+7338520.855276 |   0)               |              xen_write_cr0() {
+7338520.855276 |   0)   0.091 us    |                paravirt_get_lazy_mode();
+7338520.855277 |   0)   0.087 us    |                __xen_mc_entry();
+7338520.855277 |   0)   0.076 us    |                paravirt_get_lazy_mode();
+7338520.855278 |   0)   1.986 us    |              }
+7338520.855278 |   0)               |              xen_load_sp0() {
+7338520.855278 |   0)   0.066 us    |                paravirt_get_lazy_mode();
+7338520.855279 |   0)   0.083 us    |                __xen_mc_entry();
+7338520.855280 |   0)   0.082 us    |                paravirt_get_lazy_mode();
+7338520.855280 |   0)   1.925 us    |              }
+7338520.855281 |   0)               |              xen_load_tls() {
+7338520.855281 |   0)   0.082 us    |                paravirt_get_lazy_mode();
+7338520.855281 |   0)   0.080 us    |                paravirt_get_lazy_mode();
+7338520.855282 |   0)   0.137 us    |                load_TLS_descriptor();
+7338520.855283 |   0)   0.090 us    |                load_TLS_descriptor();
+7338520.855283 |   0)   0.081 us    |                load_TLS_descriptor();
+7338520.855284 |   0)   0.081 us    |                paravirt_get_lazy_mode();
+7338520.855284 |   0)   3.397 us    |              }
+7338520.855284 |   0)               |              xen_end_context_switch() {
+7338520.855285 |   0)   0.618 us    |                xen_mc_flush();
+7338520.855286 |   0)   0.086 us    |                paravirt_end_context_switch();
+7338520.855286 |   0)   1.708 us    |              }
+^C
+Ending tracing...
+
+Understanding whether the time is on-CPU or blocked off-CPU directs the
+performance investigation.
