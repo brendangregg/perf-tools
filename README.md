@@ -24,6 +24,7 @@ Using ftrace:
 - system/[tpoint](system/tpoint): trace a given tracepoint. [Examples](examples/tpoint_example.txt).
 - kernel/[funccount](kernel/funccount): count kernel functions that match a string. [Examples](examples/funccount_example.txt).
 - kernel/[functrace](kernel/functrace): trace kernel functions that match a string. [Examples](examples/functrace_example.txt).
+- kernel/[funcslower](kernel/funcslower): trace kernel functions slower than a threshold. [Examples](examples/funcslower_example.txt).
 - kernel/[funcgraph](kernel/funcgraph): trace kernel function graph showing children and times. [Examples](examples/funcgraph_example.txt).
 - kernel/[kprobe](kernel/kprobe): trace a given kprobe definition. [Examples](examples/kprobe_example.txt).
 - tools/[reset-ftrace](tools/reset-ftrace): reset ftrace state if needed. [Examples](examples/reset-ftrace_example.txt).
