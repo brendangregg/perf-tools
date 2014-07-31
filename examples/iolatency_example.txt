@@ -1,5 +1,6 @@
 Demonstrations of iolatency, the Linux ftrace version.
 
+
 Here's a busy system doing over 4k disk IOPS:
 
 # ./iolatency
@@ -326,3 +327,24 @@ Tracing block I/O. Output every 5 seconds. Ctrl-C to end.
 Ending tracing...
 
 Much better looking distribution.
+
+
+Use -h to print the USAGE message:
+
+# ./iolatency -h
+USAGE: iolatency [-hQT] [-d device] [-i iotype] [interval [count]]
+                 -d device       # device string (eg, "202,1)
+                 -i iotype       # match type (eg, '*R*' for all reads)
+                 -Q              # use queue insert as start time
+                 -T              # timestamp on output
+                 -h              # this usage message
+                 interval        # summary interval, seconds (default 1)
+                 count           # number of summaries
+  eg,
+       iolatency                 # summarize latency every second
+       iolatency -Q              # include block I/O queue time
+       iolatency 5 2             # 2 x 5 second summaries
+       iolatency -i '*R*'        # trace reads
+       iolatency -d 202,1        # trace device 202,1 only
+
+See the man page and example file for more info.

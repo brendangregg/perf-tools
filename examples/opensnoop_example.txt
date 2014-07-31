@@ -1,5 +1,6 @@
 Demonstrations of opensnoop, the Linux ftrace version.
 
+
 # ./opensnoop
 Tracing open()s. Ctrl-C to end.
 COMM             PID      FD FILE
@@ -22,3 +23,24 @@ supervise        1686    0x9 supervise/status.new
 [...]
 
 The first several lines show opensnoop catching itself initializing.
+
+
+Use -h to print the USAGE message:
+
+# ./opensnoop -h
+USAGE: opensnoop [-htx] [-d secs] [-p PID] [-n name] [filename]
+                 -d seconds      # trace duration, and use buffers
+                 -n name         # process name to match on I/O issue
+                 -p PID          # PID to match on I/O issue
+                 -t              # include time (seconds)
+                 -x              # only show failed opens
+                 -h              # this usage message
+                 filename        # match filename (partials, REs, ok)
+  eg,
+       opensnoop                 # watch open()s live (unbuffered)
+       opensnoop -d 1            # trace 1 sec (buffered)
+       opensnoop -p 181          # trace I/O issued by PID 181 only
+       opensnoop conf            # trace filenames containing "conf"
+       opensnoop 'log$'          # filenames ending in "log"
+
+See the man page and example file for more info.

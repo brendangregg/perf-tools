@@ -1,5 +1,6 @@
 Demonstrations of funccount, the Linux ftrace version.
 
+
 Tracing all kernel functions that start with "bio_" (which would be block
 interface functions), and counting how many times they were executed until
 Ctrl-C is hit:
@@ -104,3 +105,22 @@ This may be normal, this may not. The purpose of this tool is to give you one
 view of how one or many kernel functions are executed. Previously I had little
 idea what ext4 was doing internally. Now I know the top 25 functions, and their
 rate, and can begin researching them from the source code.
+
+
+Use -h to print the USAGE message:
+
+# ./funccount -h
+USAGE: funccount [-hT] [-i secs] [-d secs] [-t top] funcstring
+                 -d seconds      # total duration of trace
+                 -h              # this usage message
+                 -i seconds      # interval summary
+                 -t top          # show top num entries only
+                 -T              # include timestamp (for -i)
+  eg,
+       funccount 'vfs*'          # trace all funcs that match "vfs*"
+       funccount -d 5 'tcp*'     # trace "tcp*" funcs for 5 seconds
+       funccount -t 10 'ext3*'   # show top 10 "ext3*" funcs
+       funccount -i 1 'ext3*'    # summary every 1 second
+       funccount -i 1 -d 5 'ext3*' # 5 x 1 second summaries
+
+See the man page and example file for more info.

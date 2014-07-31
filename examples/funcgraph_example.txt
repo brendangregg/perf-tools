@@ -1,5 +1,6 @@
 Demonstrations of funcgraph, the Linux ftrace version.
 
+
 I'll start by showing do_nanosleep(), since it's usually a low frequency
 function that can be easily triggered (run "vmstat 1"):
 
@@ -2149,3 +2150,28 @@ Ending tracing...
 
 Understanding whether the time is on-CPU or blocked off-CPU directs the
 performance investigation.
+
+
+Use -h to print the USAGE message:
+
+# ./funcgraph -h
+USAGE: funcgraph [-acDhHPtT] [-m maxdepth] [-p PID] [-d secs] funcstring
+                 -a              # all info (same as -HPt)
+                 -c              # measure on-CPU time only
+                 -d seconds      # trace duration, and use buffers
+                 -D              # do not show function duration
+                 -h              # this usage message
+                 -H              # include column headers
+                 -m maxdepth     # max stack depth to show
+                 -p PID          # trace when this pid is on-CPU
+                 -P              # show process names & PIDs
+                 -t              # show timestamps
+                 -T              # comment function tails
+  eg,
+       funcgraph do_nanosleep    # trace do_nanosleep() and children
+       funcgraph -m 3 do_sys_open # trace do_sys_open() to 3 levels only
+       funcgraph -a do_sys_open    # include timestamps and process name
+       funcgraph -p 198 do_sys_open # trace vfs_read() for PID 198 only
+       funcgraph -d 1 do_sys_open >out # trace 1 sec, then write to file
+
+See the man page and example file for more info.

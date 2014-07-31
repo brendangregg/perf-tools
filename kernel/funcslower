@@ -70,6 +70,8 @@ function usage {
 	                 -t              # show timestamps
 	  eg,
 	       funcslower vfs_read 10000 # trace vfs_read() slower than 10 ms
+
+	See the man page and example file for more info.
 END
 	exit
 }

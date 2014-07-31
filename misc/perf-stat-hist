@@ -8,8 +8,6 @@
 #
 # USAGE: perf-stat-hist [-h] [-b buckets|-P power] [-m max] tracepoint
 #        variable [seconds]
-#    eg,
-#        ./perf-stat-hist syscalls:sys_enter_read count 10  
 #
 # Run "perf-stat-hist -h" for full usage.
 #
@@ -67,6 +65,8 @@ function usage {
 	                 # ... histogram based on these bucket ranges
 	       perf-stat-hist -b 10 syscalls:sys_exit_read ret 5
 	                 # ... bifurcate by the value 10 (lowest overhead)
+
+	See the man page and example file for more info.
 END
 	exit
 }

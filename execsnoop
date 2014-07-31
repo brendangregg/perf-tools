@@ -74,6 +74,8 @@ function usage {
 	       execsnoop -d 1            # trace 1 sec (buffered)
 	       execsnoop grep            # trace process names containing grep
 	       execsnoop 'log$'          # filenames ending in "log"
+
+	See the man page and example file for more info.
 END
 	exit
 }

@@ -59,6 +59,8 @@ function usage {
 	       funccount -t 10 'ext3*'   # show top 10 "ext3*" funcs
 	       funccount -i 1 'ext3*'    # summary every 1 second
 	       funccount -i 1 -d 5 'ext3*' # 5 x 1 second summaries
+
+	See the man page and example file for more info.
 END
 	exit
 }

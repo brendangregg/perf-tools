@@ -68,6 +68,8 @@ function usage {
 	       opensnoop -p 181          # trace I/O issued by PID 181 only
 	       opensnoop conf            # trace filenames containing "conf"
 	       opensnoop 'log$'          # filenames ending in "log"
+
+	See the man page and example file for more info.
 END
 	exit
 }

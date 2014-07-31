@@ -1,5 +1,6 @@
 Demonstrations of reset-ftrace, the Linux ftrace tool.
 
+
 You will probably never need this tool. If you kill -9 an ftrace-based tool,
 leaving the kernel in a tracing enabled state, you could try using this tool
 to reset ftrace and disable tracing. Make sure no other ftrace sessions are
@@ -74,3 +75,14 @@ Note that reset-ftrace currently only resets a few methods of enabling
 tracing, such as set_ftrace_filter and kprobe_events. Static tracepoints could 
 be enabled individually, and this script currently doesn't find and disable
 those.
+
+
+Use -h to print the USAGE message:
+
+# ./reset-ftrace -h
+USAGE: reset-ftrace [-fhq]
+                 -f              # force: delete ftrace lock file
+                 -q              # quiet: reset, but say nothing
+                 -h              # this usage message
+  eg,
+       reset-ftrace              # disable active ftrace session

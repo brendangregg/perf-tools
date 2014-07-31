@@ -1,5 +1,6 @@
 Demonstrations of bitesize, the Linux perf_events version.
 
+
 bitesize traces block I/O issued, and reports a histogram of I/O size. By
 default five buckets are used to gather statistics on common I/O sizes:
 
@@ -48,3 +49,15 @@ using what is necessary.
 
 To study this I/O in more detail, I can use iosnoop(8) and capture it to a file
 for post-processing.
+
+
+Use -h to print the USAGE message:
+
+# ./bitesize -h
+USAGE: bitesize [-h] [-b buckets] [seconds]
+                 -b buckets      # specify histogram buckets (Kbytes)
+                 -h              # this usage message
+   eg,
+       bitesize                  # trace I/O size until Ctrl-C
+       bitesize 10               # trace I/O size for 10 seconds
+       bitesize -b "8 16 32"     # specify custom bucket points

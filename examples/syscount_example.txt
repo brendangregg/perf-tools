@@ -273,3 +273,25 @@ getdents              4351
 write                25482
 
 So the most frequent syscall by PID 7979 was write().
+
+
+Use -h to print the USAGE message:
+
+# ./syscount -h
+USAGE: syscount [-chv] [-t top] {-p PID|-d seconds|command}
+       syscount                  # count by process name
+                -c               # show counts by syscall name
+                -h               # this usage message
+                -v               # verbose: shows PID
+                -p PID           # trace this PID only
+                -d seconds       # duration of trace
+                -t num           # show top number only
+                command          # run and trace this command
+  eg,
+        syscount                 # syscalls by process name
+        syscount -c              # syscalls by syscall name
+        syscount -d 5            # trace for 5 seconds
+        syscount -cp 923         # syscall names for PID 923
+        syscount -c ls           # syscall names for "ls"
+
+See the man page and example file for more info.

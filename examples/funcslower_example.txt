@@ -1,5 +1,6 @@
 Demonstrations of funcslower, the Linux ftrace version.
 
+
 Show me ext3_readpages() calls slower than 1000 microseconds (1 ms):
 
 # ./funcslower ext3_readpages 1000
@@ -88,3 +89,21 @@ Ending tracing...
 This is an example where I did not use -P, but ftrace has included process
 information anyway. Look for the lines containing "=>", which indicate a process
 switch on the given CPU.
+
+
+Use -h to print the USAGE message:
+
+# ./funcslower -h
+USAGE: funcslower [-achHPt] [-p PID] [-d secs] funcstring latency_us
+                 -a              # all info (same as -HPt)
+                 -c              # measure on-CPU time only
+                 -d seconds      # trace duration, and use buffers
+                 -h              # this usage message
+                 -H              # include column headers
+                 -p PID          # trace when this pid is on-CPU
+                 -P              # show process names & PIDs
+                 -t              # show timestamps
+  eg,
+       funcslower vfs_read 10000 # trace vfs_read() slower than 10 ms
+
+See the man page and example file for more info.

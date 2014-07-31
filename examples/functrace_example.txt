@@ -1,5 +1,6 @@
 Demonstrations of functrace, the Linux ftrace version.
 
+
 A (usually) good example to start with is do_nanosleep(), since it is not called
 frequently, and easily triggered. Here's tracing it using functrace:
 
@@ -319,3 +320,21 @@ This greatly reduces overheads. For example:
 Note that the buffer has a limited size. Check the timestamps to see if the
 range does not match your duration, as one clue that the buffer was exhausted
 and events were missed.
+
+
+Use -h to print the USAGE message:
+
+# ./functrace -h
+USAGE: functrace [-hH] [-p PID] [-d secs] funcstring
+                 -d seconds      # trace duration, and use buffers
+                 -h              # this usage message
+                 -H              # include column headers
+                 -p PID          # trace when this pid is on-CPU
+  eg,
+       functrace do_nanosleep    # trace the do_nanosleep() function
+       functrace '*sleep'        # trace functions ending in "sleep"
+       functrace -p 198 'vfs*'   # trace "vfs*" funcs for PID 198
+       functrace 'tcp*' > out    # trace all "tcp*" funcs to out file
+       functrace -d 1 'tcp*' > out  # trace 1 sec, then write out file
+
+See the man page and example file for more info.

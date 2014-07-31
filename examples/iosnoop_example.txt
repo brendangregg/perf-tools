@@ -1,5 +1,6 @@
 Demonstrations of iosnoop, the Linux ftrace version.
 
+
 Here's Linux 3.16, tracing tar archiving a filesystem:
 
 # ./iosnoop 
@@ -273,3 +274,29 @@ system (Xen guest) it looks like there is a shared queue. (Having just
 discovered this using iosnoop, I can't yet tell you which queue, but I'd hope
 that after identifying it there would be a way to tune its queueing behavior,
 so that we can eliminate or reduce the severity of these outliers.)
+
+
+Use -h to print the USAGE message:
+
+# ./iosnoop -h
+USAGE: iosnoop [-hQst] [-d device] [-i iotype] [-p PID] [-n name]
+               [duration]
+                 -d device       # device string (eg, "202,1)
+                 -i iotype       # match type (eg, '*R*' for all reads)
+                 -n name         # process name to match on I/O issue
+                 -p PID          # PID to match on I/O issue
+                 -Q              # use queue insert as start time
+                 -s              # include start time of I/O (s)
+                 -t              # include completion time of I/O (s)
+                 -h              # this usage message
+                 duration        # duration seconds, and use buffers
+  eg,
+       iosnoop                   # watch block I/O live (unbuffered)
+       iosnoop 1                 # trace 1 sec (buffered)
+       iosnoop -Q                # include queueing time in LATms
+       iosnoop -ts               # include start and end timestamps
+       iosnoop -i '*R*'          # trace reads
+       iosnoop -p 91             # show I/O issued when PID 91 is on-CPU
+       iosnoop -Qp 91            # show I/O queued by PID 91, queue time
+
+See the man page and example file for more info.

@@ -1,5 +1,6 @@
 Demonstrations of perf-stat-hist, the Linux perf_events version.
 
+
 Tracing the net:net_dev_xmit tracepoint, and building a power-of-4 histogram
 for the "len" variable, for 10 seconds:
 
@@ -120,3 +121,29 @@ Tracing syscalls:sys_exit_read, specified buckets, until Ctrl-C...
 
 This has the lowest overhead for collection, since only two tracepoint 
 filter pairs are used.
+
+
+Use -h to print the USAGE message:
+
+# ./perf-stat-hist -h
+USAGE: perf-stat-hist [-h] [-b buckets|-P power] [-m max] tracepoint
+                      variable [seconds]
+                 -b buckets      # specify histogram bucket points
+                 -P power        # power-of (default is 4)
+                 -m max          # max value for power-of
+                 -h              # this usage message
+   eg,
+       perf-stat-hist syscalls:sys_enter_read count 5
+                 # read() request histogram, 5 seconds
+       perf-stat-hist syscalls:sys_exit_read ret 5
+                 # read() return histogram, 5 seconds
+       perf-stat-hist -P 10 syscalls:sys_exit_read ret 5
+                 # ... use power-of-10
+       perf-stat-hist -P 2 -m 1024 syscalls:sys_exit_read ret 5
+                 # ... use power-of-2, max 1024
+       perf-stat-hist -b "10 50 100 500" syscalls:sys_exit_read ret 5
+                 # ... histogram based on these bucket ranges
+       perf-stat-hist -b 10 syscalls:sys_exit_read ret 5
+                 # ... bifurcate by the value 10 (lowest overhead)
+
+See the man page and example file for more info.

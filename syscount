@@ -59,7 +59,6 @@ trap '' INT QUIT TERM PIPE HUP
 
 stdout_workaround=1	# needed for older perf versions
 write_workaround=1	# needed for perf versions that trace their own writes
-ulimit -n 32768		# often needed
 
 ### parse options
 while getopts cd:hp:t:v opt
@@ -86,6 +85,8 @@ do
 		        syscount -d 5            # trace for 5 seconds
 		        syscount -cp 923         # syscall names for PID 923
 		        syscount -c ls           # syscall names for "ls"
+
+		See the man page and example file for more info.
 		END
 		exit 1
 	esac
@@ -119,6 +120,8 @@ fi
 (( opt_pid + opt_duration + opt_cmd == 0 )) && \
     echo "Tracing.$ttext.. Ctrl-C to end."
 (( stdout_workaround )) && opts="-o /dev/stdout"
+
+ulimit -n 32768		# often needed
 
 ### execute syscall name mode
 if (( opt_count && ! opt_verbose )); then

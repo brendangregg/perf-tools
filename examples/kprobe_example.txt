@@ -1,5 +1,6 @@
 Demonstrations of kprobe, the Linux ftrace version.
 
+
 This traces the kernel do_sys_open() function, when it is called:
 
 # ./kprobe p:do_sys_open
@@ -340,3 +341,35 @@ Tracing kprobe mytcp. Ctrl-C to end.
  => system_call_fastpath
 
 This makes use of the kernel options/stacktrace feature.
+
+
+Use -h to print the USAGE message:
+
+# ./kprobe -h
+USAGE: kprobe [-hHsv] [-d secs] [-p PID] kprobe_definition [filter]
+                 -d seconds      # trace duration, and use buffers
+                 -p PID          # PID to match on I/O issue
+                 -v              # view format file (don't trace)
+                 -H              # include column headers
+                 -s              # show kernel stack traces
+                 -h              # this usage message
+
+Note that these examples may need modification to match your kernel
+version's function names and platform's register usage.
+   eg,
+       kprobe p:do_sys_open
+                                 # trace open() entry
+       kprobe r:do_sys_open
+                                 # trace open() return
+       kprobe 'r:do_sys_open $retval'
+                                 # trace open() return value
+       kprobe 'r:myopen do_sys_open $retval'
+                                 # use a custom probe name
+       kprobe 'p:myopen do_sys_open mode=%cx:u16'
+                                 # trace open() file mode
+       kprobe 'p:myopen do_sys_open filename=+0(%si):string'
+                                 # trace open() with filename
+       kprobe -s 'p:myprobe tcp_retransmit_skb'
+                                 # show kernel stacks
+
+See the man page and example file for more info.
