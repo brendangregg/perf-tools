@@ -72,3 +72,11 @@ As my main target is a fleet of Linux 3.2 servers that do not have debuginfo, th
 I've tried to use perf_events ("perf") where possible, since that interface has been developed for multi-user use. For various reasons I've often needed to use ftrace instead. ftrace is suprisingly powerful (thanks Steven Rostedt!), and not all of its features are exposed via perf, or in common usage. This tool collection is in some ways a demonstration of hidden Linux features using ftrace.
 
 Since things are changing, it's very possible you may find some tools don't work on your Linux kernel version. Some expertise and assembly will be required to fix them.
+
+## Links
+
+- 10 Jul 2014: http://www.brendangregg.com/blog/2014-07-10/perf-hacktogram.html
+- 16 Jul 2014: http://www.brendangregg.com/blog/2014-07-16/iosnoop-for-linux.html
+- 23 Jul 2014: http://www.brendangregg.com/blog/2014-07-23/linux-iosnoop-latency-heat-maps.html
+- 25 Jul 2014: http://www.brendangregg.com/blog/2014-07-25/opensnoop-for-linux.html
+- 28 Jul 2014: http://www.brendangregg.com/blog/2014-07-28/execsnoop-for-linux.html
