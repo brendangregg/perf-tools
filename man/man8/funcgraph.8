@@ -115,9 +115,10 @@ TASK/PID
 (Shown with \-P.) The process name (which could include dashes), a dash, and the process ID.
 .TP
 DURATION
-Elapsed time during the function call, inclusive of children, and inclusive of
-sleep time. This is either displayed on the return
-of a function ("}"), or for a leaf function (no children), on the same line.
+Elapsed time during the function call, inclusive of children. This is also
+inclusive of sleep time, unless -c is used. The time is either displayed on
+the return of a function ("}"), or for a leaf function (no children), on the
+same line.
 
 If the trace output begins with some returns that lack entries, their durations
 may not be trusted. This is usually only the case for the first dozen or so
