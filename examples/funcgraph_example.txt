@@ -153,6 +153,90 @@ has low overhead, as you are in control of the frequency of event collection
 http://www.brendangregg.com/perf.html#FlameGraphs
 
 
+
+On newer Linux kernels, you can use the -m option to limit the function
+depth. Eg, 3 levels only:
+
+# ./funcgraph -m 3 do_nanosleep
+Tracing "do_nanosleep"... Ctrl-C to end.
+ 1)               |  do_nanosleep() {
+ 1)               |    hrtimer_start_range_ns() {
+ 1)   1.115 us    |      __hrtimer_start_range_ns();
+ 1)   1.919 us    |    }
+ 1)               |    schedule() {
+ 1)               |      __schedule() {
+ 1)   1000131 us |      }
+ 1)   11.006 us   |      xen_evtchn_do_upcall();
+ 1)   1000149 us |    }
+ 1)               |    hrtimer_cancel() {
+ 1)   0.212 us    |      hrtimer_try_to_cancel();
+ 1)   0.699 us    |    }
+ 1)   1000154 us |  }
+
+Neat.
+
+
+Now do_sys_open() to 3 levels:
+
+ 0)               |  do_sys_open() {
+ 0)               |    getname() {
+ 0)   0.296 us    |      getname_flags();
+ 0)   0.768 us    |    }
+ 0)               |    get_unused_fd_flags() {
+ 0)   0.397 us    |      __alloc_fd();
+ 0)   0.827 us    |    }
+ 0)               |    do_filp_open() {
+ 0)   4.166 us    |      path_openat();
+ 0)   4.617 us    |    }
+ 0)               |    __fsnotify_parent() {
+ 0)   0.083 us    |      dget_parent();
+ 0)   0.063 us    |      dput();
+ 0)   0.883 us    |    }
+ 0)   0.058 us    |    fsnotify();
+ 0)               |    fd_install() {
+ 0)   0.133 us    |      __fd_install();
+ 0)   0.525 us    |    }
+ 0)               |    putname() {
+ 0)   0.198 us    |      final_putname();
+ 0)   0.512 us    |    }
+ 0)   10.777 us   |  }
+[...]
+
+I can then pick the highest latency child function, then run funcgraph again
+using it as the target.
+
+
+Without timestamps (-D to elide duration):
+
+# ./funcgraph -Dm 3 do_sys_open
+Tracing "do_sys_open"... Ctrl-C to end.
+ 1) do_sys_open() {
+ 1)   getname() {
+ 1)     getname_flags();
+ 1)   }
+ 1)   get_unused_fd_flags() {
+ 1)     __alloc_fd();
+ 1)   }
+ 1)   do_filp_open() {
+ 1)     path_openat();
+ 1)   }
+ 1)   __fsnotify_parent();
+ 1)   fsnotify();
+ 1)   fd_install() {
+ 1)     __fd_install();
+ 1)   }
+ 1)   putname() {
+ 1)     final_putname();
+ 1)   }
+ 1) }
+
+Beautiful.
+
+I could elide the CPU column as well, but I want to leave it: if it changes
+half-way through some output, you know the CPU buffer has switched, and the
+output may be shuffled.
+
+
 For this example, I trace vfs_read() calls by process ID 5363: which is a bash
 shell. I also include headers (-H) and absolute timestamps (-t). While
 tracing, in that bash shell, I typed the word "hello":

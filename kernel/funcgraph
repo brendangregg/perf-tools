@@ -9,7 +9,7 @@
 # using other, lower overhead tools. This is a proof of concept using Linux
 # ftrace capabilities on older kernels.
 #
-# USAGE: funcgraph [-acDhHPtT] [-p PID] [-d secs] funcstring
+# USAGE: funcgraph [-acDhHPtT] [-m maxdepth] [-p PID] [-d secs] funcstring
 #
 # Run "funcgraph -h" for full usage.
 #
@@ -70,25 +70,29 @@ tracing=/sys/kernel/debug/tracing
 flock=/var/tmp/.ftrace-lock
 opt_duration=0; duration=; opt_pid=0; pid=; pidtext=; opt_headers=0
 opt_proc=0; opt_time=0; opt_tail=0; opt_nodur=0; opt_cpu=0
+opt_max=0; max=0
 trap ':' INT QUIT TERM PIPE HUP	# sends execution to end tracing section
 
 function usage {
 	cat <<-END >&2
-	USAGE: funcgraph [-acDhHPtT] [-p PID] [-d secs] funcstring
+	USAGE: funcgraph [-acDhHPtT] [-m maxdepth] [-p PID] [-d secs] funcstring
 	                 -a              # all info (same as -HPt)
 	                 -c              # measure on-CPU time only
 	                 -d seconds      # trace duration, and use buffers
 	                 -D              # do not show function duration
 	                 -h              # this usage message
 	                 -H              # include column headers
+	                 -m maxdepth     # max stack depth to show
 	                 -p PID          # trace when this pid is on-CPU
 	                 -P              # show process names & PIDs
 	                 -t              # show timestamps
 	                 -T              # comment function tails
 	  eg,
 	       funcgraph do_nanosleep    # trace do_nanosleep() and children
-	       funcgraph -p 198 vfs_read # trace vfs_read() for PID 198 only
-	       funcgraph -d 1 vfs_read > out  # trace 1 sec, then write to file
+	       funcgraph -m 3 do_sys_open # trace do_sys_open() to 3 levels only
+	       funcgraph -a do_sys_open    # include timestamps and process name
+	       funcgraph -p 198 do_sys_open # trace vfs_read() for PID 198 only
+	       funcgraph -d 1 do_sys_open >out # trace 1 sec, then write to file
 
 	See the man page and example file for more info.
 END
@@ -115,6 +119,7 @@ function end {
 
 	warn "echo nop > current_tracer"
 	(( opt_pid )) && warn "echo > set_ftrace_pid"
+	(( opt_max )) && warn "echo 0 > max_graph_depth"
 	warn "echo > set_graph_function"
 	warn "echo > trace"
 
@@ -135,13 +140,14 @@ function edie {
 }
 
 ### process options
-while getopts acd:DhHp:PtT opt
+while getopts acd:DhHm:p:PtT opt
 do
 	case $opt in
 	a)	opt_headers=1; opt_proc=1; opt_time=1 ;;
 	c)	opt_cpu=1; ;;
 	d)	opt_duration=1; duration=$OPTARG ;;
 	D)	opt_nodur=1; ;;
+	m)	opt_max=1; max=$OPTARG ;;
 	p)	opt_pid=1; pid=$OPTARG ;;
 	H)	opt_headers=1; ;;
 	P)	opt_proc=1; ;;
@@ -175,6 +181,11 @@ wroteflock=1
 sysctl -q kernel.ftrace_enabled=1	# doesn't set exit status
 read mode < current_tracer
 [[ "$mode" != "nop" ]] && edie "ERROR: ftrace active (current_tracer=$mode)"
+if (( opt_max )); then
+	if ! echo $max > max_graph_depth; then
+		edie "ERROR: setting -m $max. Older kernel version? Exiting."
+	fi
+fi
 if (( opt_pid )); then
 	if ! echo $pid > set_ftrace_pid; then
 		edie "ERROR: setting -p $pid (PID exist?). Exiting."
