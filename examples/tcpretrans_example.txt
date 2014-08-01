@@ -31,6 +31,7 @@ however, retransmits are often timer-based, where it's the kernel that is
 on-CPU.
 
 The STATE column shows the TCP state for the socket performing the retransmit.
+The "--" column is the packet type. "R>" for retransmit.
 
 
 Use -h to print the USAGE message:
