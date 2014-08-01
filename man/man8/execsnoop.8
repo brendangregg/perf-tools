@@ -3,7 +3,7 @@
 execsnoop \- trace process exec() with arguments. Uses Linux ftrace.
 .SH SYNOPSIS
 .B execsnoop
-[\-hrt] [\-n name]
+[\-hrt] [\-a argc] [\-d secs] [name]
 .SH DESCRIPTION
 execsnoop traces process execution, showing PID, PPID, and argument details
 if possible.
@@ -59,9 +59,11 @@ user space by awk.
 .SH EXAMPLES
 .TP
 Trace all new processes and arguments (if possible):
+#
 .B execsnoop
 .TP
 Trace all new process names containing the text "http":
+#
 .B execsnoop http
 .SH FIELDS
 .TP
