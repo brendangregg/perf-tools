@@ -119,4 +119,5 @@ writefile set_ftrace_pid
 writefile events/enable 0
 writefile tracing_thresh 0
 writefile kprobe_events
+writefile tracing_on 1
 vecho "Done."
