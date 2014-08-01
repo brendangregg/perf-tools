@@ -47,7 +47,7 @@
 tracing=/sys/kernel/debug/tracing
 flock=/var/tmp/.ftrace-lock; wroteflock=0
 opt_duration=0; duration=; opt_pid=0; pid=; opt_filter=0; filter=
-opt_view=0; opt_headers=0; opt_stack=0; dmesg=2
+opt_view=0; opt_headers=0; opt_stack=0; dmesg=2; debug=0
 trap ':' INT QUIT TERM PIPE HUP	# sends execution to end tracing section
 
 function usage {
@@ -150,12 +150,28 @@ if [[ "$kprobe" != p:* && "$kprobe" != r:* ]]; then
 	echo >&2 "ERROR: invalid kprobe definition (should start with p: or r:)"
 	usage
 fi
+#
+# parse the following:
+# r:do_sys_open
+# r:my_sys_open do_sys_open
+# r:do_sys_open %ax
+# r:do_sys_open $retval %ax
+# r:my_sys_open do_sys_open $retval %ax
+# r:do_sys_open rval=$retval
+# r:my_sys_open do_sys_open rval=$retval
+# r:my_sys_open do_sys_open rval=$retval %ax
+# ... and examples from USAGE message
+#
 krest=${kprobe#*:}
 kname=${krest%% *}
-if [[ "$krest" != *\ [a-zA-Z]* ]]; then
+set -- $krest
+if [[ $2 == "" || $2 == *[=%\$]* ]]; then
 	# if probe name unspecified, default to function name
 	ktype=${kprobe%%:*}
 	kprobe="$ktype:$kname $krest"
+fi
+if (( debug )); then
+	echo "kname: $kname, kprobe: $kprobe"
 fi
 if (( !opt_view )); then
 	if (( opt_duration )); then
