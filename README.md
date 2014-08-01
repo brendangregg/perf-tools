@@ -42,6 +42,14 @@ Requires the "perf" command to be installed. This is in the linux-tools-common p
 
 FTRACE configured in the kernel. You may already have this configured and available in your kernel version, as FTRACE was first added in 2.6.27. This requires CONFIG_FTRACE and other FTRACE options depending on the tool. Some tools (eg, funccount) require CONFIG_FUNCTION_PROFILER.
 
+### debugfs
+
+Requires a kernel with CONFIG_DEBUG_FS option enabled. As with FTRACE, this may already be enabled (debugfs was added in 2.6.10-rc3). The debugfs also needs to be mounted:
+
+```
+$ mount -t debugfs none /sys/kernel/debug
+```
+
 ## Install
 
 These are just scripts. Either grab everything:
