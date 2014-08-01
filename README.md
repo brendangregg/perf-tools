@@ -22,6 +22,7 @@ Using ftrace:
 - [execsnoop](execsnoop): trace process exec() with command line argument details. [Examples](examples/execsnoop_example.txt).
 - [opensnoop](opensnoop): trace open() syscalls showing filenames. [Examples](examples/opensnoop_example.txt).
 - system/[tpoint](system/tpoint): trace a given tracepoint. [Examples](examples/tpoint_example.txt).
+- net/[tcpretrans](net/tcpretrans): show TCP retransmits, with address and other details. [Examples](examples/tcpretrans_example.txt).
 - kernel/[funccount](kernel/funccount): count kernel functions that match a string. [Examples](examples/funccount_example.txt).
 - kernel/[functrace](kernel/functrace): trace kernel functions that match a string. [Examples](examples/functrace_example.txt).
 - kernel/[funcslower](kernel/funcslower): trace kernel functions slower than a threshold. [Examples](examples/funcslower_example.txt).

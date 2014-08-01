@@ -1,0 +1,41 @@
+Demonstrations of tcpretrans, the Linux ftrace version.
+
+
+Tracing TCP retransmits on a busy server:
+
+# ./tcpretrans 
+TIME     PID    LADDR:LPORT          -- RADDR:RPORT          STATE
+05:16:44 3375   10.150.18.225:53874  R> 10.105.152.3:6001    ESTABLISHED
+05:16:44 3375   10.150.18.225:53874  R> 10.105.152.3:6001    ESTABLISHED
+05:16:54 4028   10.150.18.225:6002   R> 10.150.30.249:1710   ESTABLISHED
+05:16:54 4028   10.150.18.225:6002   R> 10.150.30.249:1710   ESTABLISHED
+05:16:54 4028   10.150.18.225:6002   R> 10.150.30.249:1710   ESTABLISHED
+05:16:54 4028   10.150.18.225:6002   R> 10.150.30.249:1710   ESTABLISHED
+05:16:54 4028   10.150.18.225:6002   R> 10.150.30.249:1710   ESTABLISHED
+05:16:54 4028   10.150.18.225:6002   R> 10.150.30.249:1710   ESTABLISHED
+05:16:54 4028   10.150.18.225:6002   R> 10.150.30.249:1710   ESTABLISHED
+05:16:55 0      10.150.18.225:47115  R> 10.71.171.158:6001   ESTABLISHED
+05:16:58 0      10.150.18.225:44388  R> 10.103.130.120:6001  ESTABLISHED
+05:16:58 0      10.150.18.225:44388  R> 10.103.130.120:6001  ESTABLISHED
+05:16:58 0      10.150.18.225:44388  R> 10.103.130.120:6001  ESTABLISHED
+05:16:59 0      10.150.18.225:56086  R> 10.150.32.107:6001   ESTABLISHED
+05:16:59 0      10.150.18.225:56086  R> 10.150.32.107:6001   ESTABLISHED
+^C
+Ending tracing...
+
+This shows TCP retransmits by dynamically tracing the kernel function that does
+the retransmit. This is a low overhead approach.
+
+The PID may or may not make sense: it's showing the PID that was on-CPU,
+however, retransmits are often timer-based, where it's the kernel that is
+on-CPU.
+
+The STATE column shows the TCP state for the socket performing the retransmit.
+
+
+Use -h to print the USAGE message:
+
+# ./tcpretrans -h
+USAGE: tcpretrans [-h]
+   eg,
+       tcpretrans        	 # trace TCP retransmits
