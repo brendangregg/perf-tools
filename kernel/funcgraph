@@ -9,7 +9,7 @@
 # using other, lower overhead tools. This is a proof of concept using Linux
 # ftrace capabilities on older kernels.
 #
-# USAGE: funcgraph [-acDhHPtT] [-m maxdepth] [-p PID] [-d secs] funcstring
+# USAGE: funcgraph [-aCDhHPtT] [-m maxdepth] [-p PID] [-d secs] funcstring
 #
 # Run "funcgraph -h" for full usage.
 #
@@ -75,9 +75,9 @@ trap ':' INT QUIT TERM PIPE HUP	# sends execution to end tracing section
 
 function usage {
 	cat <<-END >&2
-	USAGE: funcgraph [-acDhHPtT] [-m maxdepth] [-p PID] [-d secs] funcstring
+	USAGE: funcgraph [-aCDhHPtT] [-m maxdepth] [-p PID] [-d secs] funcstring
 	                 -a              # all info (same as -HPt)
-	                 -c              # measure on-CPU time only
+	                 -C              # measure on-CPU time only
 	                 -d seconds      # trace duration, and use buffers
 	                 -D              # do not show function duration
 	                 -h              # this usage message
@@ -140,11 +140,11 @@ function edie {
 }
 
 ### process options
-while getopts acd:DhHm:p:PtT opt
+while getopts aCd:DhHm:p:PtT opt
 do
 	case $opt in
 	a)	opt_headers=1; opt_proc=1; opt_time=1 ;;
-	c)	opt_cpu=1; ;;
+	C)	opt_cpu=1; ;;
 	d)	opt_duration=1; duration=$OPTARG ;;
 	D)	opt_nodur=1; ;;
 	m)	opt_max=1; max=$OPTARG ;;
@@ -202,7 +202,7 @@ if ! echo function_graph > current_tracer; then
 fi
 if (( opt_cpu )); then
 	if ! echo nosleep-time > trace_options; then
-		edie "ERROR: setting -c (nosleep-time). Exiting."
+		edie "ERROR: setting -C (nosleep-time). Exiting."
 	fi
 fi
 # the following must be done after setting current_tracer

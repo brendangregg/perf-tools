@@ -57,7 +57,7 @@ earlier output, this tells me that the latency in this function is due to time
 spent blocked off-CPU, and not on-CPU. This makes sense: this function is
 ultimately being blocked on disk I/O.
 
-Were the function duration times to be similar with and without -c, that would
+Were the function duration times to be similar with and without -C, that would
 tell us that the high latency is due to time spent on-CPU executing code.
 
 
@@ -94,9 +94,9 @@ switch on the given CPU.
 Use -h to print the USAGE message:
 
 # ./funcslower -h
-USAGE: funcslower [-achHPt] [-p PID] [-d secs] funcstring latency_us
+USAGE: funcslower [-aChHPt] [-p PID] [-d secs] funcstring latency_us
                  -a              # all info (same as -HPt)
-                 -c              # measure on-CPU time only
+                 -C              # measure on-CPU time only
                  -d seconds      # trace duration, and use buffers
                  -h              # this usage message
                  -H              # include column headers

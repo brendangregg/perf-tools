@@ -1620,10 +1620,10 @@ by completing a 19 second read (time between commands), then has a series of
 The function times printed are inclusive of their children.
 
 
-The -c option will print on-CPU times only, excluding sleeping or blocking
+The -C option will print on-CPU times only, excluding sleeping or blocking
 events from the function duration times. Eg:
 
-# ./funcgraph -ctp 25285 vfs_read
+# ./funcgraph -Ctp 25285 vfs_read
 Tracing "vfs_read" for PID 25285... Ctrl-C to end.
 7338520.591816 |   0)               |              finish_task_switch() {
 7338520.591820 |   0)               |                xen_evtchn_do_upcall() {
@@ -2155,9 +2155,9 @@ performance investigation.
 Use -h to print the USAGE message:
 
 # ./funcgraph -h
-USAGE: funcgraph [-acDhHPtT] [-m maxdepth] [-p PID] [-d secs] funcstring
+USAGE: funcgraph [-aCDhHPtT] [-m maxdepth] [-p PID] [-d secs] funcstring
                  -a              # all info (same as -HPt)
-                 -c              # measure on-CPU time only
+                 -C              # measure on-CPU time only
                  -d seconds      # trace duration, and use buffers
                  -D              # do not show function duration
                  -h              # this usage message

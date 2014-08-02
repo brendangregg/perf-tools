@@ -7,7 +7,7 @@
 # and filter them based on a latency threshold. This is a proof of concept using
 # Linux ftrace capabilities on older kernels.
 #
-# USAGE: funcslower [-achHPt] [-p PID] [-d secs] funcstring latency_us
+# USAGE: funcslower [-aChHPt] [-p PID] [-d secs] funcstring latency_us
 #
 # Run "funcslower -h" for full usage.
 #
@@ -59,9 +59,9 @@ trap ':' INT QUIT TERM PIPE HUP	# sends execution to end tracing section
 
 function usage {
 	cat <<-END >&2
-	USAGE: funcslower [-achHPt] [-p PID] [-d secs] funcstring latency_us
+	USAGE: funcslower [-aChHPt] [-p PID] [-d secs] funcstring latency_us
 	                 -a              # all info (same as -HPt)
-	                 -c              # measure on-CPU time only
+	                 -C              # measure on-CPU time only
 	                 -d seconds      # trace duration, and use buffers
 	                 -h              # this usage message
 	                 -H              # include column headers
@@ -116,11 +116,11 @@ function edie {
 }
 
 ### process options
-while getopts acd:hHp:Pt opt
+while getopts aCd:hHp:Pt opt
 do
 	case $opt in
 	a)	opt_headers=1; opt_proc=1; opt_time=1 ;;
-	c)	opt_cpu=1; ;;
+	C)	opt_cpu=1; ;;
 	d)	opt_duration=1; duration=$OPTARG ;;
 	p)	opt_pid=1; pid=$OPTARG ;;
 	H)	opt_headers=1; ;;
@@ -190,7 +190,7 @@ if ! echo function_graph > current_tracer; then
 fi
 if (( opt_cpu )); then
 	if ! echo nosleep-time > trace_options; then
-		edie "ERROR: setting -c (nosleep-time). Exiting."
+		edie "ERROR: setting -C (nosleep-time). Exiting."
 	fi
 fi
 # the following must be done after setting current_tracer

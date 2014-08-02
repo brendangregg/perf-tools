@@ -3,7 +3,7 @@
 funcgraph \- trace kernel function graph, showing child function calls and times. Uses Linux ftrace.
 .SH SYNOPSIS
 .B funcgraph
-[\-acDhHPtT] [\-m maxdepth] [\-p PID] [\-d secs] funcstring
+[\-aCDhHPtT] [\-m maxdepth] [\-p PID] [\-d secs] funcstring
 .SH DESCRIPTION
 This is an exploratory tool that shows the graph of child function calls
 for a given kernel function. This can cost moderate overhead to execute, and
@@ -38,7 +38,7 @@ kernels.
 \-a
 All info. Same as \-HPt. (But no -T, which isn't available in older kernels.)
 .TP
-\-c
+\-C
 Function durations measure on-CPU time only (exclude sleep time).
 .TP
 \-d seconds
@@ -120,7 +120,7 @@ TASK/PID
 .TP
 DURATION
 Elapsed time during the function call, inclusive of children. This is also
-inclusive of sleep time, unless -c is used. The time is either displayed on
+inclusive of sleep time, unless -C is used. The time is either displayed on
 the return of a function ("}"), or for a leaf function (no children), on the
 same line.
 
