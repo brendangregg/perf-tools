@@ -204,8 +204,8 @@ if ! echo 1 > events/block/$b_start/enable || \
     ! echo 1 > events/block/block_rq_complete/enable; then
 	edie "ERROR: enabling block I/O tracepoints. Exiting."
 fi
-(( opt_start )) && printf "%-14s " "STARTs"
-(( opt_end )) && printf "%-14s " "ENDs"
+(( opt_start )) && printf "%-15s " "STARTs"
+(( opt_end )) && printf "%-15s " "ENDs"
 printf "%-12.12s %-6s %-4s %-8s %-12s %-6s %8s\n" \
     "COMM" "PID" "TYPE" "DEV" "BLOCK" "BYTES" "LATms"
 
@@ -274,9 +274,9 @@ fi ) | $awk -v o=$offset -v opt_name=$opt_name -v name=$name \
 			pid = pids[dev, loc]
 
 			if (opt_start)
-				printf "%-14s ", starts[dev, loc]
+				printf "%-15s ", starts[dev, loc]
 			if (opt_end)
-				printf "%-14s ", time
+				printf "%-15s ", time
 			printf "%-12.12s %-6s %-4s %-8s %-12s %-6s %8s\n",
 			    comm, pid, dir, dev, loc, nsec * 512, latency
 			if (!opt_duration)
