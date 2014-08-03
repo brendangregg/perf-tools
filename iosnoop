@@ -206,7 +206,7 @@ if ! echo 1 > events/block/$b_start/enable || \
 fi
 (( opt_start )) && printf "%-14s " "STARTs"
 (( opt_end )) && printf "%-14s " "ENDs"
-printf "%-16.16s %-6s %-4s %-8s %-12s %-6s %8s\n" \
+printf "%-12.12s %-6s %-4s %-8s %-12s %-6s %8s\n" \
     "COMM" "PID" "TYPE" "DEV" "BLOCK" "BYTES" "LATms"
 
 #
@@ -277,7 +277,7 @@ fi ) | $awk -v o=$offset -v opt_name=$opt_name -v name=$name \
 				printf "%-14s ", starts[dev, loc]
 			if (opt_end)
 				printf "%-14s ", time
-			printf "%-16.16s %-6s %-4s %-8s %-12s %-6s %8s\n",
+			printf "%-12.12s %-6s %-4s %-8s %-12s %-6s %8s\n",
 			    comm, pid, dir, dev, loc, nsec * 512, latency
 			if (!opt_duration)
 				fflush()
