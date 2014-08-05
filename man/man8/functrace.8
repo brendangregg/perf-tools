@@ -18,6 +18,9 @@ or writing ext4* functions to an ext4 file system. For the former, tcp
 trace data could be redirected to a file (as in the usage message). For
 the latter, trace to the screen or a different file system.
 
+SEE ALSO: kprobe(8), which can dynamically trace a single function call or
+return, and examine CPU registers and return values.
+
 Since this uses ftrace, only the root user can use this tool.
 .SH REQUIREMENTS
 FTRACE CONFIG, which you may already have enabled and available on recent
@@ -114,4 +117,4 @@ Unstable - in development.
 .SH AUTHOR
 Brendan Gregg
 .SH SEE ALSO
-funccount(8)
+funccount(8), kprobe(8)
