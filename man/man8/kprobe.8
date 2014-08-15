@@ -3,7 +3,7 @@
 kprobe \- trace a given kprobe definition. Kernel dynamic tracing. Uses Linux ftrace.
 .SH SYNOPSIS
 .B kprobe
-[\-hHsv] [\-d secs] [\-p PID] kprobe_definition [filter]
+[\-FhHsv] [\-d secs] [\-p PID] kprobe_definition [filter]
 .SH DESCRIPTION
 This will create, trace, then destroy a given kprobe definition. See
 Documentation/trace/kprobetrace.txt in the Linux kernel source for the
@@ -11,8 +11,9 @@ syntax of a kprobe definition, and "kprobe -h" for examples. With this tool,
 the probe alias is optional (it will become to kprobe:<funcname> if not
 specified).
 
-WARNING: This uses kernel dynamic tracing, which can cause cause kernel panics
-or freezes. Test, and know what you are doing, before use.
+WARNING: This uses dynamic tracing of kernel functions, and could cause
+kernel panics or freezes, depending on the function traced. Test in a lab
+environment, and know what you are doing, before use.
 
 Also beware of feedback loops: tracing tcp functions over an ssh session,
 or writing ext4 functions to an ext4 file system. For the former, tcp
@@ -27,6 +28,12 @@ Since this uses ftrace, only the root user can use this tool.
 FTRACE and KPROBES CONFIG, which you may already have enabled and available on
 recent kernels.
 .SH OPTIONS
+.TP
+\-F
+Force. Trace despite warnings. By default the specified kernel function must
+exist in the available_filter_functions file. This option overrides this check.
+This might expose you to more unsafe functions, which could cause kernel
+panics or freezes when traced.
 .TP
 \-d seconds
 Set the duration of tracing, in seconds. Trace output will be buffered and

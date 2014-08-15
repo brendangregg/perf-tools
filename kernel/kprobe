@@ -9,12 +9,16 @@
 # the probe alias is optional (it will become to kprobe:<funcname> if not
 # specified).
 #
-# USAGE: ./kprobe [-hHsv] [-d secs] [-p pid] kprobe_definition [filter]
+# USAGE: ./kprobe [-FhHsv] [-d secs] [-p pid] kprobe_definition [filter]
 #
 # Run "kprobe -h" for full usage.
 #
 # I wrote this because I kept testing different custom kprobes at the command
 # line, and wanted a way to automate the steps.
+#
+# WARNING: This uses dynamic tracing of kernel functions, and could cause
+# kernel panics or freezes, depending on the function traced. Test in a lab
+# environment, and know what you are doing, before use.
 #
 # REQUIREMENTS: FTRACE and KPROBE CONFIG, which you may already have on recent
 # kernel versions.
@@ -47,12 +51,13 @@
 tracing=/sys/kernel/debug/tracing
 flock=/var/tmp/.ftrace-lock; wroteflock=0
 opt_duration=0; duration=; opt_pid=0; pid=; opt_filter=0; filter=
-opt_view=0; opt_headers=0; opt_stack=0; dmesg=2; debug=0
+opt_view=0; opt_headers=0; opt_stack=0; dmesg=2; debug=0; opt_force=0
 trap ':' INT QUIT TERM PIPE HUP	# sends execution to end tracing section
 
 function usage {
 	cat <<-END >&2
-	USAGE: kprobe [-hHsv] [-d secs] [-p PID] kprobe_definition [filter]
+	USAGE: kprobe [-FhHsv] [-d secs] [-p PID] kprobe_definition [filter]
+	                 -F              # force. trace despite warnings.
 	                 -d seconds      # trace duration, and use buffers
 	                 -p PID          # PID to match on I/O issue
 	                 -v              # view format file (don't trace)
@@ -118,9 +123,10 @@ function edie {
 }
 
 ### process options
-while getopts d:hHp:sv opt
+while getopts Fd:hHp:sv opt
 do
 	case $opt in
+	F)	opt_force=1 ;;
 	d)	opt_duration=1; duration=$OPTARG ;;
 	p)	opt_pid=1; pid=$OPTARG ;;
 	H)	opt_headers=1 ;;
@@ -173,6 +179,22 @@ fi
 if (( debug )); then
 	echo "kname: $kname, kprobe: $kprobe"
 fi
+
+### check permissions
+cd $tracing || die "ERROR: accessing tracing. Root user? Kernel has FTRACE?
+    debugfs mounted? (mount -t debugfs debugfs /sys/kernel/debug)"
+
+## check function
+set -- $kprobe
+fname=$2
+if (( !opt_force )) && ! grep -w $fname available_filter_functions 2>/dev/null
+then
+	echo >&2 "ERROR: func $fname not in $PWD/available_filter_functions."
+	printf >&2 "Either it doesn't exist, or, it might be unsafe to kprobe. "
+	echo >&2 "Exiting. Use -F to override."
+	exit 1
+fi
+
 if (( !opt_view )); then
 	if (( opt_duration )); then
 		echo "Tracing kprobe $kname for $duration seconds (buffered)..."
@@ -180,10 +202,6 @@ if (( !opt_view )); then
 		echo "Tracing kprobe $kname. Ctrl-C to end."
 	fi
 fi
-
-### check permissions
-cd $tracing || die "ERROR: accessing tracing. Root user? Kernel has FTRACE?
-    debugfs mounted? (mount -t debugfs debugfs /sys/kernel/debug)"
 
 ### ftrace lock
 [[ -e $flock ]] && die "ERROR: ftrace may be in use by PID $(cat $flock) $flock"
