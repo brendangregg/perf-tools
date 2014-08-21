@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # funcslower - trace kernel functions slower than a threshold (microseconds).
 #              Uses Linux ftrace.

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # kprobe - trace a given kprobe definition. Kernel dynamic tracing.
 #          Written using Linux ftrace.

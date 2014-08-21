@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # bitesize - show disk I/O size as a histogram.
 #            Written using Linux perf_events (aka "perf").

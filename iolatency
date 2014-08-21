@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # iolatency - summarize block device I/O latency as a histogram.
 #             Written using Linux ftrace.

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # syscount - count system calls.
 #            Written using Linux perf_events (aka "perf").

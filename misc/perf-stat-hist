@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # perf-stat-hist - perf_events stat histogram hack.
 #                  Written using Linux perf_events (aka "perf").

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # funcgraph - trace kernel function graph, showing child function calls.
 #             Uses Linux ftrace.

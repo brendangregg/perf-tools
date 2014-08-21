@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # tpoint - trace a given tracepoint. Static tracing.
 #          Written using Linux ftrace.

@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 #
 # tcpretrans - show TCP retransmts, with address and other details.
 #              Written using Linux ftrace.

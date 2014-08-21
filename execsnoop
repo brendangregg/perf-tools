@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # execsnoop - trace process exec() with arguments.
 #             Written using Linux ftrace.
