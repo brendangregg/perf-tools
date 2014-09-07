@@ -34,9 +34,42 @@ The STATE column shows the TCP state for the socket performing the retransmit.
 The "--" column is the packet type. "R>" for retransmit.
 
 
+Kernel stack traces can be included with -s, which may show the type of
+retransmit:
+
+# ./tcpretrans -s
+TIME     PID    LADDR:LPORT          -- RADDR:RPORT          STATE
+06:21:10 19516  10.144.107.151:22    R> 10.13.106.251:32167  ESTABLISHED
+ => tcp_fastretrans_alert
+ => tcp_ack
+ => tcp_rcv_established
+ => tcp_v4_do_rcv
+ => tcp_v4_rcv
+ => ip_local_deliver_finish
+ => ip_local_deliver
+ => ip_rcv_finish
+ => ip_rcv
+ => __netif_receive_skb
+ => netif_receive_skb
+ => handle_incoming_queue
+ => xennet_poll
+ => net_rx_action
+ => __do_softirq
+ => call_softirq
+ => do_softirq
+ => irq_exit
+ => xen_evtchn_do_upcall
+ => xen_do_hypervisor_callback
+
+This looks like a fast retransmit (inclusion of tcp_fastretrans_alert(), and
+being based on receiving an ACK, rather than a timer).
+
+
 Use -h to print the USAGE message:
 
 # ./tcpretrans -h
-USAGE: tcpretrans [-h]
+USAGE: tcpretrans [-hs]
+                  -h       # help message
+                  -s       # print stack traces
    eg,
-       tcpretrans        	 # trace TCP retransmits
+       tcpretrans          # trace TCP retransmits

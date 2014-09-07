@@ -8,7 +8,7 @@
 # sent by the kernel on timeouts). To keep overhead low, only
 # tcp_retransmit_skb() calls are traced (this does not trace every packet).
 #
-# USAGE: ./tcpretrans [-h]
+# USAGE: ./tcpretrans [-hs]
 #
 # REQUIREMENTS: FTRACE and KPROBE CONFIG, tcp_retransmit_skb() kernel function.
 # You may have these already have these on recent kernels. And Perl.
@@ -67,15 +67,18 @@ local $SIG{HUP} = \&cleanup;
 $| = 1;
 
 ### options
-my ($help);
-GetOptions("help"   => \$help)
+my ($help, $stacks);
+GetOptions("help|h"   => \$help,
+	   "stacks|s" => \$stacks)
 or usage();
 usage() if $help;
 
 sub usage {
-	print STDERR "USAGE: tcpretrans [-h]\n";
+	print STDERR "USAGE: tcpretrans [-hs]\n";
+	print STDERR "                  -h       # help message\n";
+	print STDERR "                  -s       # print stack traces\n";
 	print STDERR "   eg,\n";
-	print STDERR "       tcpretrans        	 # trace TCP retransmits\n";
+	print STDERR "       tcpretrans          # trace TCP retransmits\n";
 	exit;
 }
 
@@ -153,6 +156,10 @@ writeto "nop", "current_tracer" or ldie "ERROR: disabling current_tracer.";
 my $kname = "tcpretrans_tcp_retransmit_skb";
 appendto "p:$kname tcp_retransmit_skb sk=%di", "kprobe_events"
     or ldie "ERROR: creating kprobe for inet_csk_accept().";
+if ($stacks) {
+	writeto "1", "options/stacktrace" or print STDERR "WARNING: " .
+	    "unable to enable stacktraces.";
+}
 unless (writeto "1", "events/kprobes/$kname/enable") {
 	appendto "-:$kname", "kprobe_events";
 	ldie "ERROR: enabling kprobe.";
@@ -188,6 +195,11 @@ while (1) {
 
 	# process and print events
 	for (@trace) {
+		if ($stacks && /^ *=>/) {
+			print $_;
+			next;
+		}
+
 		my ($taskpid, $rest) = split ' ', $_, 2;
 		my ($task, $pid) = $taskpid =~ /(.*)-(\d+)/;
 
@@ -224,6 +236,10 @@ cleanup();
 sub cleanup {
 	print "\nEnding tracing...\n";
 	close TPIPE;
+	if ($stacks) {
+		writeto "0", "options/stacktrace" or print STDERR "WARNING: " .
+		    "unable to disable stacktraces.";
+	}
 	writeto "0", "events/kprobes/$kname/enable"
 	    or ldie "ERROR: disabling kprobe";
 	appendto "-:$kname", "kprobe_events";

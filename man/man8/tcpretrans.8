@@ -3,7 +3,7 @@
 tcpretrans \- show TCP retransmits, with address and other details. Uses Linux ftrace.
 .SH SYNOPSIS
 .B tcpretrans
-[\-h]
+[\-hs]
 .SH DESCRIPTION
 This traces TCP retransmits that are sent by the system tcpretrans is executed
 from, showing address, port, and TCP state information,
@@ -29,6 +29,9 @@ You may have these already have these on recent kernels. And Perl.
 .TP
 \-h
 Print usage message.
+.TP
+\-s
+Include kernel stack traces.
 .SH EXAMPLES
 .TP
 Trace TCP retransmits
