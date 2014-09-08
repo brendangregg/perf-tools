@@ -65,6 +65,24 @@ This looks like a fast retransmit (inclusion of tcp_fastretrans_alert(), and
 being based on receiving an ACK, rather than a timer).
 
 
+The -l option will include TCP tail loss probe events (TLP; see
+http://lwn.net/Articles/542642/). Eg:
+
+# ./tcpretrans -l
+TIME     PID    LADDR:LPORT          -- RADDR:RPORT          STATE       
+21:56:06 0      10.100.155.200:22    R> 10.10.237.72:18554   LAST_ACK    
+21:56:08 0      10.100.155.200:22    R> 10.10.237.72:18554   LAST_ACK    
+21:56:10 16452  10.100.155.200:22    R> 10.10.237.72:18554   LAST_ACK    
+21:56:10 0      10.100.155.200:22    L> 10.10.237.72:46408   LAST_ACK    
+21:56:10 0      10.100.155.200:22    R> 10.10.237.72:46408   LAST_ACK    
+21:56:12 0      10.100.155.200:22    R> 10.10.237.72:46408   LAST_ACK    
+21:56:13 0      10.100.155.200:22    R> 10.10.237.72:46408   LAST_ACK    
+^C
+Ending tracing...
+
+Look for "L>" in the type column ("--") for TLP events.
+
+
 Use -h to print the USAGE message:
 
 # ./tcpretrans -h

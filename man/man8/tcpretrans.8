@@ -19,7 +19,12 @@ modifications to work on different kernels and platforms. This would be better
 written using a tracer such as SystemTap, and will likely be rewritten in the
 future when certain tracing features are added to the Linux kernel.
 
-Currently only IPv4 is supported.
+When \-l is used, this also uses dynamic tracing of tcp_send_loss_probe() and
+a register.
+
+Currently only IPv4 is supported, on x86_64. If you try this on a different
+architecture, you'll likely need to adjust the register locations (search
+for %di).
 
 Since this uses ftrace, only the root user can use this tool.
 .SH REQUIREMENTS
@@ -34,7 +39,7 @@ Print usage message.
 \-s
 Include kernel stack traces.
 .TP
-\-p
+\-l
 Include TCP tail loss probes.
 .SH EXAMPLES
 .TP
@@ -56,7 +61,7 @@ LPORT
 Local port.
 .TP
 \-\-
-Packet type: "R>" for retransmit.
+Packet type: "R>" for retransmit, and "L>" for tail loss probe.
 .TP
 RADDR
 Remote address.
@@ -66,9 +71,6 @@ Remote port.
 .TP
 STATE
 TCP session state.
-.TP
-TLP
-Tail loss probe: "Y/N".
 .SH OVERHEAD
 The CPU overhead is relative to the rate of TCP retransmits, and is
 designed to be low as this does not examine every packet. Once per second the
