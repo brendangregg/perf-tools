@@ -35,21 +35,25 @@ Using perf_events:
 
 The intent is as few as possible. Eg, a Linux 3.2 server without debuginfo. See the tool man page for specifics.
 
-### perf_events
-
-Requires the "perf" command to be installed. This is in the linux-tools-common package. After installing that, perf may tell you to install an additional linux-tools package (linux-tools-_kernel-version_). perf can also be built under tools/perf in the kernel source. See [perf_events Prerequisites](http://www.brendangregg.com/perf.html#Prerequisites) for more details.
-
 ### ftrace
 
 FTRACE configured in the kernel. You may already have this configured and available in your kernel version, as FTRACE was first added in 2.6.27. This requires CONFIG_FTRACE and other FTRACE options depending on the tool. Some tools (eg, funccount) require CONFIG_FUNCTION_PROFILER.
+
+### perf_events
+
+Requires the "perf" command to be installed. This is in the linux-tools-common package. After installing that, perf may tell you to install an additional linux-tools package (linux-tools-_kernel-version_). perf can also be built under tools/perf in the kernel source. See [perf_events Prerequisites](http://www.brendangregg.com/perf.html#Prerequisites) for more details.
 
 ### debugfs
 
 Requires a kernel with CONFIG_DEBUG_FS option enabled. As with FTRACE, this may already be enabled (debugfs was added in 2.6.10-rc3). The debugfs also needs to be mounted:
 
 ```
-$ mount -t debugfs none /sys/kernel/debug
+# mount -t debugfs none /sys/kernel/debug
 ```
+
+### awk
+
+Many of there scripts use awk, and will try to use either mawk or gawk depending on the desired behavior: mawk for buffered output (because of its speed), and gawk for synchronous output (as fflush() works, allowing more efficient grouping of writes).
 
 ## Install
 
@@ -59,7 +63,7 @@ These are just scripts. Either grab everything:
 git clone https://github.com/brendangregg/perf-tools
 ```
 
-Or use the raw links on github to download individual scripts. Eg
+Or use the raw links on github to download individual scripts. Eg:
 
 ```
 wget https://raw.githubusercontent.com/brendangregg/perf-tools/master/iosnoop
@@ -85,8 +89,11 @@ Since things are changing, it's very possible you may find some tools don't work
 
 ## Links
 
-- 10 Jul 2014: http://www.brendangregg.com/blog/2014-07-10/perf-hacktogram.html
-- 16 Jul 2014: http://www.brendangregg.com/blog/2014-07-16/iosnoop-for-linux.html
-- 23 Jul 2014: http://www.brendangregg.com/blog/2014-07-23/linux-iosnoop-latency-heat-maps.html
-- 25 Jul 2014: http://www.brendangregg.com/blog/2014-07-25/opensnoop-for-linux.html
+- 13 Aug 2014: http://lwn.net/Articles/608497/ Ftrace: The hidden light switch
+
+- 06 Sep 2014: http://www.brendangregg.com/blog/2014-09-06/linux-ftrace-tcp-retransmit-tracing.html
 - 28 Jul 2014: http://www.brendangregg.com/blog/2014-07-28/execsnoop-for-linux.html
+- 25 Jul 2014: http://www.brendangregg.com/blog/2014-07-25/opensnoop-for-linux.html
+- 23 Jul 2014: http://www.brendangregg.com/blog/2014-07-23/linux-iosnoop-latency-heat-maps.html
+- 16 Jul 2014: http://www.brendangregg.com/blog/2014-07-16/iosnoop-for-linux.html
+- 10 Jul 2014: http://www.brendangregg.com/blog/2014-07-10/perf-hacktogram.html
