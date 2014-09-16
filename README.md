@@ -9,18 +9,13 @@ Many of these tools employ workarounds so that functionality is possible on exis
 
 ## Contents
 
-Using perf_events:
-
-- misc/[perf-stat-hist](misc/perf-stat-hist): power-of aggregations for tracepoint variables. [Examples](examples/perf-stat-hist_example.txt).
-- [syscount](syscount): count syscalls by syscall or process. [Examples](examples/syscount_example.txt).
-- disk/[bitesize](disk/bitesize): histogram summary of disk I/O size. [Examples](examples/bitesize_example.txt).
-
 Using ftrace:
 
 - [iosnoop](iosnoop): trace disk I/O with details including latency. [Examples](examples/iosnoop_example.txt).
 - [iolatency](iolatency): summarize disk I/O latency as a histogram. [Examples](examples/iolatency_example.txt).
 - [execsnoop](execsnoop): trace process exec() with command line argument details. [Examples](examples/execsnoop_example.txt).
 - [opensnoop](opensnoop): trace open() syscalls showing filenames. [Examples](examples/opensnoop_example.txt).
+- [killsnoop](killsnoop): trace kill() signals showing process and signal details. [Examples](examples/killsnoop_example.txt).
 - net/[tcpretrans](net/tcpretrans): show TCP retransmits, with address and other details. [Examples](examples/tcpretrans_example.txt).
 - system/[tpoint](system/tpoint): trace a given tracepoint. [Examples](examples/tpoint_example.txt).
 - kernel/[funccount](kernel/funccount): count kernel function calls, matching a string with wildcards. [Examples](examples/funccount_example.txt).
@@ -29,6 +24,12 @@ Using ftrace:
 - kernel/[funcgraph](kernel/funcgraph): trace a graph of kernel function calls, showing children and times. [Examples](examples/funcgraph_example.txt).
 - kernel/[kprobe](kernel/kprobe): dynamically trace a kernel function call or its return, with variables. [Examples](examples/kprobe_example.txt).
 - tools/[reset-ftrace](tools/reset-ftrace): reset ftrace state if needed. [Examples](examples/reset-ftrace_example.txt).
+
+Using perf_events:
+
+- misc/[perf-stat-hist](misc/perf-stat-hist): power-of aggregations for tracepoint variables. [Examples](examples/perf-stat-hist_example.txt).
+- [syscount](syscount): count syscalls by syscall or process. [Examples](examples/syscount_example.txt).
+- disk/[bitesize](disk/bitesize): histogram summary of disk I/O size. [Examples](examples/bitesize_example.txt).
 
 ## Prerequisites
 
