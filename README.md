@@ -60,7 +60,7 @@ Many of there scripts use awk, and will try to use either mawk or gawk depending
 These are just scripts. Either grab everything:
 
 ```
-git clone https://github.com/brendangregg/perf-tools
+git clone --depth 1 https://github.com/brendangregg/perf-tools
 ```
 
 Or use the raw links on github to download individual scripts. Eg:
