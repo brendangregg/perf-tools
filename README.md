@@ -89,7 +89,11 @@ Since things are changing, it's very possible you may find some tools don't work
 
 ## Links
 
+A case study and summary:
+
 - 13 Aug 2014: http://lwn.net/Articles/608497/ Ftrace: The hidden light switch
+
+Related articles:
 
 - 06 Sep 2014: http://www.brendangregg.com/blog/2014-09-06/linux-ftrace-tcp-retransmit-tracing.html
 - 28 Jul 2014: http://www.brendangregg.com/blog/2014-07-28/execsnoop-for-linux.html
