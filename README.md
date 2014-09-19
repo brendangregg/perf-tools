@@ -35,8 +35,7 @@ Using perf_events:
 
 Showing new processes and arguments:
 
-```
-# ./execsnoop 
+<pre># <b>./execsnoop</b> 
 Tracing exec()s. Ctrl-C to end.
    PID   PPID ARGS
  22898  22004 man ls
@@ -48,15 +47,14 @@ Tracing exec()s. Ctrl-C to end.
  22912  22907 groff -mtty-char -Tutf8 -mandoc -rLL=164n -rLT=164n
  22913  22912 troff -mtty-char -mandoc -rLL=164n -rLT=164n -Tutf8
  22914  22912 grotty
-```
+</pre>
 
 Measuring block device I/O latency from queue insert to completion:
 
-```
-# ./iolatency -Q
+<pre># <b>./iolatency -Q</b>
 Tracing block I/O. Output every 1 seconds. Ctrl-C to end.
 
-  >=(ms) .. <(ms)   : I/O      |Distribution                          |
+  &gt;=(ms) .. &lt;(ms)   : I/O      |Distribution                          |
        0 -> 1       : 1913     |######################################|
        1 -> 2       : 438      |#########                             |
        2 -> 4       : 100      |##                                    |
@@ -65,14 +63,13 @@ Tracing block I/O. Output every 1 seconds. Ctrl-C to end.
       16 -> 32      : 43       |#                                     |
       32 -> 64      : 1        |#                                     |
 [...]
-```
+</pre>
 
 Tracing the block:block_rq_insert tracepoint, with kernel stack traces, and only for reads:
 
-```
-# ./tpoint -s block:block_rq_insert 'rwbs ~ "*R*"'
-           cksum-11908 [000] d... 7269839.919098: block_rq_insert: 202,1 R 0 () 736560 + 136 [cksum]
-           cksum-11908 [000] d... 7269839.919107: <stack trace>
+<pre># <b>./tpoint -s block:block_rq_insert 'rwbs ~ "*R*"'</b>
+   cksum-11908 [000] d... 7269839.919098: block_rq_insert: 202,1 R 0 () 736560 + 136 [cksum]
+   cksum-11908 [000] d... 7269839.919107: <stack trace>
  => __elv_add_request
  => blk_flush_plug_list
  => blk_finish_plug
@@ -84,14 +81,13 @@ Tracing the block:block_rq_insert tracepoint, with kernel stack traces, and only
  => vfs_read
  => SyS_read
  => system_call_fastpath
-```
+</pre>
 
-Counting kernel function calls beginning with "bio_":
+Count kernel function calls beginning with "bio_", summarize every second:
 
-```
-# ./funccount 'bio_*'
+<pre># <b>./funccount -i 1 'bio_*'</b>
 Tracing "bio_*"... Ctrl-C to end.
-^C
+
 FUNC                              COUNT
 bio_attempt_back_merge               26
 bio_get_nr_vecs                     361
@@ -104,7 +100,9 @@ bio_init                            536
 bio_integrity_enabled               536
 bio_put                             729
 bio_add_page                       1004
-```
+
+[...]
+</pre>
 
 There are many more examples in the [examples](examples) directory, organized by script. Also see the [man/man8](man pages).
 
