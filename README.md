@@ -104,7 +104,7 @@ bio_add_page                       1004
 [...]
 </pre>
 
-There are many more examples in the [examples](examples) directory, organized by script. Also see the [man/man8](man pages).
+There are many more examples in the [examples](examples) directory, organized by script. Also see the [man pages](man/man8).
 
 ## Prerequisites
 
