@@ -31,6 +31,83 @@ Using perf_events:
 - [syscount](syscount): count syscalls by syscall or process. [Examples](examples/syscount_example.txt).
 - disk/[bitesize](disk/bitesize): histogram summary of disk I/O size. [Examples](examples/bitesize_example.txt).
 
+## Screenshots
+
+Showing new processes and arguments:
+
+```
+# ./execsnoop 
+Tracing exec()s. Ctrl-C to end.
+   PID   PPID ARGS
+ 22898  22004 man ls
+ 22905  22898 preconv -e UTF-8
+ 22908  22898 pager -s
+ 22907  22898 nroff -mandoc -rLL=164n -rLT=164n -Tutf8
+ 22906  22898 tbl
+ 22911  22910 locale charmap
+ 22912  22907 groff -mtty-char -Tutf8 -mandoc -rLL=164n -rLT=164n
+ 22913  22912 troff -mtty-char -mandoc -rLL=164n -rLT=164n -Tutf8
+ 22914  22912 grotty
+```
+
+Measuring block device I/O latency from queue insert to completion:
+
+```
+# ./iolatency -Q
+Tracing block I/O. Output every 1 seconds. Ctrl-C to end.
+
+  >=(ms) .. <(ms)   : I/O      |Distribution                          |
+       0 -> 1       : 1913     |######################################|
+       1 -> 2       : 438      |#########                             |
+       2 -> 4       : 100      |##                                    |
+       4 -> 8       : 145      |###                                   |
+       8 -> 16      : 43       |#                                     |
+      16 -> 32      : 43       |#                                     |
+      32 -> 64      : 1        |#                                     |
+[...]
+```
+
+Tracing the block:block_rq_insert tracepoint, with kernel stack traces, and only for reads:
+
+```
+# ./tpoint -s block:block_rq_insert 'rwbs ~ "*R*"'
+           cksum-11908 [000] d... 7269839.919098: block_rq_insert: 202,1 R 0 () 736560 + 136 [cksum]
+           cksum-11908 [000] d... 7269839.919107: <stack trace>
+ => __elv_add_request
+ => blk_flush_plug_list
+ => blk_finish_plug
+ => __do_page_cache_readahead
+ => ondemand_readahead
+ => page_cache_async_readahead
+ => generic_file_read_iter
+ => new_sync_read
+ => vfs_read
+ => SyS_read
+ => system_call_fastpath
+```
+
+Counting kernel function calls beginning with "bio_":
+
+```
+# ./funccount 'bio_*'
+Tracing "bio_*"... Ctrl-C to end.
+^C
+FUNC                              COUNT
+bio_attempt_back_merge               26
+bio_get_nr_vecs                     361
+bio_alloc                           536
+bio_alloc_bioset                    536
+bio_endio                           536
+bio_free                            536
+bio_fs_destructor                   536
+bio_init                            536
+bio_integrity_enabled               536
+bio_put                             729
+bio_add_page                       1004
+```
+
+There are many more examples in the [examples](examples) directory, organized by script. Also see the [man/man8](man pages).
+
 ## Prerequisites
 
 The intent is as few as possible. Eg, a Linux 3.2 server without debuginfo. See the tool man page for specifics.
