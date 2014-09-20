@@ -104,7 +104,7 @@ bio_add_page                       1004
 [...]
 </pre>
 
-There are many more examples in the [examples](examples) directory, organized by script. Also see the [man pages](man/man8).
+There are many more examples in the [examples](examples) directory. Also see the [man pages](man/man8).
 
 ## Prerequisites
 
@@ -116,7 +116,7 @@ FTRACE configured in the kernel. You may already have this configured and availa
 
 ### perf_events
 
-Requires the "perf" command to be installed. This is in the linux-tools-common package. After installing that, perf may tell you to install an additional linux-tools package (linux-tools-_kernel-version_). perf can also be built under tools/perf in the kernel source. See [perf_events Prerequisites](http://www.brendangregg.com/perf.html#Prerequisites) for more details.
+Requires the "perf" command to be installed. This is in the linux-tools-common package. After installing that, perf may tell you to install an additional linux-tools package (linux-tools-_kernel_version_). perf can also be built under tools/perf in the kernel source. See [perf_events Prerequisites](http://www.brendangregg.com/perf.html#Prerequisites) for more details about getting perf_events to work fully.
 
 ### debugfs
 
@@ -148,7 +148,7 @@ This preserves tabs (which copy-n-paste can mess up).
 
 ## Internals, Warnings, and Overhead
 
-perf_events is evolving. This collection began development circa Linux 3.16, with Linux 3.2 servers as the main target, at a time when perf_events lacks certain programmatic capabilities (eg, custom in-kernel aggregations). It's possible these will be added in a forthcoming kernel release. Until then, many of these tools employ workarounds, tricks, and hacks in order to work. Some of these tools pass event data to user space for post-processing, which costs much higher overhead than in-kernel aggregations.
+perf_events is evolving. This collection began development circa Linux 3.16, with Linux 3.2 servers as the main target, at a time when perf_events lacks certain programmatic capabilities (eg, custom in-kernel aggregations). It's possible these will be added in a forthcoming kernel release. Until then, many of these tools employ workarounds, tricks, and hacks in order to work. Some of these tools pass event data to user space for post-processing, which costs much higher overhead than in-kernel aggregations. The overhead of each tool is described in its man page.
 
 __WARNING__: In _extreme_ cases, your target application may run 5x slower when using these tools. Depending on the tool and kernel version, there may also be the risk of kernel panics. Read the program header for warnings, and test before use.
 
