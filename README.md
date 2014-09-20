@@ -3,7 +3,7 @@ perf-tools
 
 A miscellaneous collection of in-development and unsupported performance analysis tools for Linux perf_events, aka the "perf" command, and ftrace. Both perf and ftrace are core Linux tracing tools, included in the kernel source. Your system probably has ftrace already, and perf is often just a package add (see Prerequisites).
 
-These tools are designed to be easy to install (fewest dependencies), provide advanced performance observability, and be simple to use: do one thing and do it well. This collection was written by Brendan Gregg (author of the DTraceToolkit).
+These tools are designed to be easy to install (fewest dependencies), provide advanced performance observability, and be simple to use: do one thing and do it well. This collection was created by Brendan Gregg (author of the DTraceToolkit).
 
 Many of these tools employ workarounds so that functionality is possible on existing Linux kernels. Because of this, many tools have caveats (see man pages), and their implementation should be considered a placeholder until future kernel features, or new tracing subsystems, are added.
 
@@ -62,6 +62,7 @@ Tracing block I/O. Output every 1 seconds. Ctrl-C to end.
        8 -> 16      : 43       |#                                     |
       16 -> 32      : 43       |#                                     |
       32 -> 64      : 1        |#                                     |
+
 [...]
 </pre>
 
@@ -81,6 +82,8 @@ Tracing the block:block_rq_insert tracepoint, with kernel stack traces, and only
  => vfs_read
  => SyS_read
  => system_call_fastpath
+
+[...]
 </pre>
 
 Count kernel function calls beginning with "bio_", summarize every second:
