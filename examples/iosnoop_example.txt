@@ -132,7 +132,7 @@ subsystem). You can try the -Q option for more reliable process identification.
 The -Q option begins tracing on block I/O queue insert, instead of issue.
 Here's before and after, while dd(1) writes a large file:
 
-# .liosnoop
+# ./iosnoop
 Tracing block I/O. Ctrl-C to end.
 COMM             PID    TYPE DEV      BLOCK        BYTES     LATms
 dd               26983  WS   202,16   4064416      45056     16.70
@@ -162,7 +162,7 @@ when the block device I/O was issued, but they didn't originate it.
 
 Now the -Q option is used:
 
-# .liosnoop -Q
+# ./iosnoop -Q
 Tracing block I/O. Ctrl-C to end.
 COMM             PID    TYPE DEV      BLOCK        BYTES     LATms
 kjournald        1217   WS   202,16   6132200      45056    141.12
