@@ -184,15 +184,18 @@ function makeprobe {
 		(( i++ ))
 	done
 }
-# try stub_execve() first, then do_execve()
+# try stub_execve() first, then do_execve() and sys_execve
 makeprobe stub_execve
 
 ### setup and begin tracing
 echo nop > current_tracer
 if ! echo $kprobe >> kprobe_events 2>/dev/null; then
 	makeprobe do_execve
-	if ! echo $kprobe >> kprobe_events; then
-		edie "ERROR: adding a kprobe for execve. Exiting."
+	if ! echo $kprobe >> kprobe_events 2>/dev/null; then
+	    makeprobe sys_execve
+	    if ! echo $kprobe >> kprobe_events 2>/dev/null; then
+		    edie "ERROR: adding a kprobe for execve. Exiting."
+        fi
 	fi
 fi
 if ! echo 1 > events/kprobes/$kname/enable; then
