@@ -160,10 +160,12 @@ fi
 cd $tracing || die "ERROR: accessing tracing. Root user? Kernel has FTRACE?
     debugfs mounted? (mount -t debugfs debugfs /sys/kernel/debug)"
 
-### list tracepoints
+### do list tracepoints
 if (( opt_list )); then
 	cd events
 	for tp in */*; do
+		# skip filter/enable files
+		[[ -f $tp ]] && continue
 		echo ${tp/\//:}
 	done
 	exit
