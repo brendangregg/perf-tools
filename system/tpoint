@@ -68,9 +68,6 @@ function usage {
 	                 -l              # list all tracepoints
 	                 -s              # show kernel stack traces
 	                 -h              # this usage message
-	
-	Note that these examples may need modification to match your kernel
-	version's function names and platform's register usage.
 	   eg,
 	       tpoint -l | grep open
 	                                 # find tracepoints containing "open"
@@ -78,7 +75,7 @@ function usage {
 	                                 # trace open() syscall entry
 	       tpoint block:block_rq_issue
 	                                 # trace block I/O issue
-	       tpoint -s block:black_rq_issue
+	       tpoint -s block:block_rq_issue
 	                                 # show kernel stacks
 
 	See the man page and example file for more info.
