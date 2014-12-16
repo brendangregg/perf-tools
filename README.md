@@ -1,11 +1,17 @@
 perf-tools
 ==========
 
-A miscellaneous collection of in-development and unsupported performance analysis tools for Linux perf_events, aka the "perf" command, and ftrace. Both perf and ftrace are core Linux tracing tools, included in the kernel source. Your system probably has ftrace already, and perf is often just a package add (see Prerequisites).
+A miscellaneous collection of in-development and unsupported performance analysis tools for Linux ftrace and perf_events (aka the "perf" command). Both ftrace and perf are core Linux tracing tools, included in the kernel source. Your system probably has ftrace already, and perf is often just a package add (see Prerequisites).
 
 These tools are designed to be easy to install (fewest dependencies), provide advanced performance observability, and be simple to use: do one thing and do it well. This collection was created by Brendan Gregg (author of the DTraceToolkit).
 
 Many of these tools employ workarounds so that functionality is possible on existing Linux kernels. Because of this, many tools have caveats (see man pages), and their implementation should be considered a placeholder until future kernel features, or new tracing subsystems, are added.
+
+These are intended for Linux 3.2 and newer kernels. For Linux 2.6.x, see warnings.
+
+## Presentation
+
+- These tools were introduced in the USENIX LISA 2014 presentation: Linux Performance Analysis: New Tools and Old Secrets [slides](http://www.slideshare.net/brendangregg/linux-performance-analysis-new-tools-and-old-secrets) [video](https://www.usenix.org/conference/lisa14/conference-program/presentation/gregg).
 
 ## Contents
 
@@ -149,7 +155,13 @@ wget https://raw.githubusercontent.com/brendangregg/perf-tools/master/iosnoop
 
 This preserves tabs (which copy-n-paste can mess up).
 
-## Internals, Warnings, and Overhead
+## Warnings
+
+Ftrace was first added to Linux 2.6.27, and perf_events to Linux 2.6.31. These early versions had kernel bugs, and lockups and panics have been reported on 2.6.32 series kernels. This includes CentOS 6.x. If you must analyze older kernels, these tools may only be useful in a fault-tolerant environment, such as a lab with simulated issues. These tools have been primarirly developed on Linux 3.2 and later kernels.
+
+Depending on the tool, there may also be overhead incurred. See the next section.
+
+## Internals and Overhead
 
 perf_events is evolving. This collection began development circa Linux 3.16, with Linux 3.2 servers as the main target, at a time when perf_events lacks certain programmatic capabilities (eg, custom in-kernel aggregations). It's possible these will be added in a forthcoming kernel release. Until then, many of these tools employ workarounds, tricks, and hacks in order to work. Some of these tools pass event data to user space for post-processing, which costs much higher overhead than in-kernel aggregations. The overhead of each tool is described in its man page.
 
@@ -169,7 +181,7 @@ Since things are changing, it's very possible you may find some tools don't work
 
 A case study and summary:
 
-- 13 Aug 2014: http://lwn.net/Articles/608497/ Ftrace: The hidden light switch
+- 13 Aug 2014: http://lwn.net/Articles/608497 Ftrace: The hidden light switch
 
 Related articles:
 
