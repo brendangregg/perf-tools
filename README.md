@@ -11,7 +11,10 @@ These are intended for Linux 3.2 and newer kernels. For Linux 2.6.x, see warning
 
 ## Presentation
 
-- These tools were introduced in the USENIX LISA 2014 presentation: Linux Performance Analysis: New Tools and Old Secrets [slides](http://www.slideshare.net/brendangregg/linux-performance-analysis-new-tools-and-old-secrets) [video](https://www.usenix.org/conference/lisa14/conference-program/presentation/gregg).
+These tools were introduced in the USENIX LISA 2014 presentation: Linux Performance Analysis: New Tools and Old Secrets
+
+- slides: http://www.slideshare.net/brendangregg/linux-performance-analysis-new-tools-and-old-secrets
+- video: https://www.usenix.org/conference/lisa14/conference-program/presentation/gregg
 
 ## Contents
 
