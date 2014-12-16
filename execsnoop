@@ -9,8 +9,8 @@
 # USAGE: ./execsnoop [-hrt] [-n name]
 #
 # REQUIREMENTS: FTRACE and KPROBE CONFIG, sched:sched_process_fork tracepoint,
-# and either the stub_execve() or do_execve() kernel function. You may already
-# have these on recent kernels. And awk.
+# and either the sys_execve, stub_execve or do_execve kernel function. You may
+# already have these on recent kernels. And awk.
 #
 # This traces exec() from the fork()->exec() sequence, which means it won't
 # catch new processes that only fork(). With the -r option, it will also catch
@@ -21,9 +21,9 @@
 #
 # This implementation is designed to work on older kernel versions, and without
 # kernel debuginfo. It works by dynamic tracing an execve kernel function to
-# read the arguments from the %si register. The stub_execve() function is tried
-# first, and then the do_execve() function. The sched:sched_process_fork
-# tracepoint, is used for the PPID. This program is a workaround that should be
+# read the arguments from the %si register. The sys_execve function is tried
+# first, then stub_execve and do_execve. The sched:sched_process_fork
+# tracepoint is used to get the PPID. This program is a workaround that should be
 # improved in the future when other kernel capabilities are made available. If
 # you need a more reliable tool now, then consider other tracing alternatives
 # (eg, SystemTap). This tool is really a proof of concept to see what ftrace can
@@ -184,15 +184,15 @@ function makeprobe {
 		(( i++ ))
 	done
 }
-# try stub_execve() first, then do_execve() and sys_execve
-makeprobe stub_execve
+# try in this order: sys_execve, stub_execve, do_execve
+makeprobe sys_execve
 
 ### setup and begin tracing
 echo nop > current_tracer
 if ! echo $kprobe >> kprobe_events 2>/dev/null; then
-	makeprobe do_execve
+	makeprobe stub_execve
 	if ! echo $kprobe >> kprobe_events 2>/dev/null; then
-	    makeprobe sys_execve
+	    makeprobe do_execve
 	    if ! echo $kprobe >> kprobe_events 2>/dev/null; then
 		    edie "ERROR: adding a kprobe for execve. Exiting."
         fi
@@ -204,6 +204,7 @@ fi
 if ! echo 1 > events/sched/sched_process_fork/enable; then
 	edie "ERROR: enabling sched:sched_process_fork tracepoint. Exiting."
 fi
+echo "Instrumenting $func"
 (( opt_time )) && printf "%-16s " "TIMEs"
 printf "%6s %6s %s\n" "PID" "PPID" "ARGS"
 
