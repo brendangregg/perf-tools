@@ -7,7 +7,7 @@ These tools are designed to be easy to install (fewest dependencies), provide ad
 
 Many of these tools employ workarounds so that functionality is possible on existing Linux kernels. Because of this, many tools have caveats (see man pages), and their implementation should be considered a placeholder until future kernel features, or new tracing subsystems, are added.
 
-These are intended for Linux 3.2 and newer kernels. For Linux 2.6.x, see warnings.
+These are intended for Linux 3.2 and newer kernels. For Linux 2.6.x, see Warnings.
 
 ## Presentation
 
@@ -160,7 +160,7 @@ This preserves tabs (which copy-n-paste can mess up).
 
 ## Warnings
 
-Ftrace was first added to Linux 2.6.27, and perf_events to Linux 2.6.31. These early versions had kernel bugs, and lockups and panics have been reported on 2.6.32 series kernels. This includes CentOS 6.x. If you must analyze older kernels, these tools may only be useful in a fault-tolerant environment, such as a lab with simulated issues. These tools have been primarirly developed on Linux 3.2 and later kernels.
+Ftrace was first added to Linux 2.6.27, and perf_events to Linux 2.6.31. These early versions had kernel bugs, and lockups and panics have been reported on 2.6.32 series kernels. This includes CentOS 6.x. If you must analyze older kernels, these tools may only be useful in a fault-tolerant environment, such as a lab with simulated issues. These tools have been primarily developed on Linux 3.2 and later kernels.
 
 Depending on the tool, there may also be overhead incurred. See the next section.
 
