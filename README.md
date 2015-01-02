@@ -25,6 +25,7 @@ Using ftrace:
 - [execsnoop](execsnoop): trace process exec() with command line argument details. [Examples](examples/execsnoop_example.txt).
 - [opensnoop](opensnoop): trace open() syscalls showing filenames. [Examples](examples/opensnoop_example.txt).
 - [killsnoop](killsnoop): trace kill() signals showing process and signal details. [Examples](examples/killsnoop_example.txt).
+- fs/[cachestat](fs/cachestat): basic cache hit/miss statistics for the Linux page cache. [Examples](examples/cachestat_example.txt).
 - net/[tcpretrans](net/tcpretrans): show TCP retransmits, with address and other details. [Examples](examples/tcpretrans_example.txt).
 - system/[tpoint](system/tpoint): trace a given tracepoint. [Examples](examples/tpoint_example.txt).
 - kernel/[funccount](kernel/funccount): count kernel function calls, matching a string with wildcards. [Examples](examples/funccount_example.txt).
