@@ -131,8 +131,10 @@ else
 fi
 
 ### select awk
-(( opt_duration )) && use=mawk || use=gawk  # workaround for mawk fflush()
-[[ -x /usr/bin/$use ]] && awk=$use || awk=awk
+# workaround for mawk fflush()
+[[ -x /usr/bin/mawk ]] && awk="mawk" && mawk -W interactive && [ $? -eq 0 ] && awk="mawk -W interactive"
+# workaround for gawk strtonum()
+[[ -x /usr/bin/gawk ]] && awk="gawk --non-decimal-data"
 
 ### check permissions
 cd $tracing || die "ERROR: accessing tracing. Root user? Kernel has FTRACE?
@@ -219,15 +221,15 @@ fi ) | $awk -v o=$offset -v opt_name=$opt_name -v name=$name \
         signal = $(7+o)
         sub(/,$/, "", kpid)
         sub(/\)$/, "", signal)
-        kpid = strtonum("0x"kpid)
-        signal = strtonum("0x"signal)
+        kpid = int("0x"kpid)
+        signal = int("0x"signal)
         current[pid,"kpid"] = kpid
         current[pid,"signal"] = signal
     }
 
     # sys_kill exit
     $1 != "#" && $(5+o) ~ /->/ {
-        rv = strtonum($NF)
+        rv = int($NF)
         killed_pid = current[pid,"kpid"]
         signal = current[pid,"signal"]
 
