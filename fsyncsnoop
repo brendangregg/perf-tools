@@ -6,8 +6,10 @@
 # This traces fsync() syscalls, showing the file name and returned value.
 #
 # This implementation is designed to work on older kernel versions, and without
-# kernel debuginfo. It works by dynamic tracing of the return value of getname()
-# as a string, and associating it with the following fsync() syscall return.
+# kernel debuginfo. It works by dynamic tracing of the enter and return time of
+# fsync(), to calculate the fsync latency. It also tries to guess file path by
+# by using external readlink commands against /proc/<pid>/fd/<fd>.
+# 
 # This approach is kernel version specific, and may not work on your version.
 # It is a workaround, and proof of concept for ftrace, until more kernel tracing
 # functionality is available.
@@ -16,8 +18,9 @@
 #
 # Run "fsyncsnoop -h" for full usage.
 #
-# REQUIREMENTS: FTRACE CONFIG, syscalls:sys_enter/exit_ftrace tracepoints,
-# awk and lsof.
+# REQUIREMENTS: FTRACE CONFIG, syscalls:sys_enter/exit_ftrace tracepoints, awk
+# and /proc/<pid>/fd/<fd>
+#
 #
 # From perf-tools: https://github.com/brendangregg/perf-tools
 #
@@ -41,7 +44,7 @@
 #
 #  (http://www.gnu.org/copyleft/gpl.html)
 #
-# 20-Jul-2014	Brendan Gregg	Created this.
+# 21-Jan-2015	Yong Yang	Created this (Repurposed Brendan's opensnoop)
 
 ### default variables
 tracing=/sys/kernel/debug/tracing
@@ -146,10 +149,6 @@ fi
 # workaround for gawk strtonum()
 [[ -x /usr/bin/gawk ]] && awk="gawk --non-decimal-data"
 
-### check lsof
-has_lsof=1 && [[ ! -x /usr/bin/lsof ]] && has_lsof=0 \
-&& echo "No lsof support, you may not get file name!\n"
-
 ### check permissions
 cd $tracing || die "ERROR: accessing tracing. Root user? Kernel has FTRACE?
     debugfs mounted? (mount -t debugfs debugfs /sys/kernel/debug)"
@@ -162,7 +161,7 @@ wroteflock=1
 ### setup and begin tracing
 echo nop > current_tracer
 if (( opt_pid )); then
-	if ! echo "common_pid==$pid" > events/syscalls/sys_enter_fsync/filter ||
+	if ! echo "common_pid==$pid" > events/syscalls/sys_enter_fsync/filter || \
 	   ! echo "common_pid==$pid" > events/syscalls/sys_exit_fsync/filter;
 	then
 	    edie "ERROR: setting -p $pid. Exiting."
@@ -196,11 +195,16 @@ warn "echo > trace"
 else
 	# print buffer live
 	cat trace_pipe
-	#cat /tmp/fsync_output
 fi ) | $awk -v o=$offset -v opt_name=$opt_name -v name=$name \
     -v opt_duration=$opt_duration -v opt_time=$opt_time -v time_ms=$time_ms \
-    -v opt_fail=$opt_fail -v opt_file=$opt_file -v file=$file \
-    -v has_lsof=$has_lsof '
+    -v opt_fail=$opt_fail -v opt_file=$opt_file -v file=$file '
+	function free() {
+		delete time_enter[pid, fd]
+		delete lastfile[pid, fd]
+		delete enter_flag[pid, fd]
+		delete lastfd[pid]
+	}
+	
 	# common fields
 	$1 != "#" {
 		# task name can contain dashes
@@ -209,48 +213,69 @@ fi ) | $awk -v o=$offset -v opt_name=$opt_name -v name=$name \
 		if (opt_name && match(comm, name) == 0)
 			next
 		sub(/.*-/, "", pid)
+
 	}
 
 	# sys_fsync() enter
 	$1 != "#" && $(4+o) ~ /sys_fsync\(/ {
 		fd = $NF
 		sub(/\)$/, "", fd)
-		# lsof need a number
 		fd = int("0x"fd)
 
-		if (has_lsof) {
-			cmd = "lsof -a -F n -n -p" pid " -d " fd " | tail -n1"
-			cmd | getline filename
-			sub(/^n/, "", filename)
-		} else {
-			filename = "N/A"
-		}
+		#Guess filename, it may not be correct if fd had been closed
+		cmd = "readlink /proc/"pid"/fd/"fd
+		cmd | getline filename
+		close(cmd)
 
 		if (opt_file && filename !~ file)
 			next
 
-		time_enter = $(3+o); sub(":", "", time_enter)
+		time_enter[pid, fd] = $(3+o); sub(":", "", time_enter[pid, fd])
+		lastfd[pid] = fd
+		lastname[pid, fd] = filename
+		enter_flag[pid, fd] = 1;
 	}
-
 
 	# sys_fsync() exit
 	$1 != "#" && $(4+o) == "sys_fsync" {
-		rval = $NF
-		# matched failed as beginning with 0xfffff
-		if (opt_fail && rval !~ /0xfffff/)
+		fd = lastfd[pid]
+		filename = lastname[pid, fd]
+
+		if (opt_file && filename !~ file) {
+			free()
 			next
+		}
+
+		if (enter_flag[pid, fd] == 1) {
+			rval = $NF
+		} else {
+			# Skip the exit entry
+			printf "%-16.16s pid:%s, fd:%s " \
+			    "has no matched enter api fd_table %s\n", comm, pid, fd
+			next
+		}
+
+		# matched failed as beginning with 0xfffff
+		if (opt_fail && rval !~ /0xfffff/) {
+			free()
+			next
+		}
 
 		time_exit = $(3+o); sub(":", "", time_exit)
 
-		latency = 1000 * (time_exit - time_enter);
+		latency = 1000 * (time_exit - time_enter[pid, fd]);
 
-		if (opt_time && latency < time_ms)
+		if (opt_time && latency < time_ms) {
+			free()
 			next
+		}
 
 		latency = sprintf("%.2f", latency);
 
 		printf "%-16.16s %-6s %6s %4s %s %s\n",
 		    comm, pid, latency, fd, rval, filename
+
+		free()
 	}
 
 	$0 ~ /LOST.*EVENTS/ { print "WARNING: " $0 > "/dev/stderr" }
