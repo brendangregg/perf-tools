@@ -8,7 +8,7 @@
 # This implementation is designed to work on older kernel versions, and without
 # kernel debuginfo. It works by dynamic tracing of the enter and return time of
 # fsync(), to calculate the fsync latency. It also tries to guess file path by
-# by using external readlink commands against /proc/<pid>/fd/<fd>.
+# by using python readlink method against /proc/<pid>/fd/<fd>.
 # 
 # This approach is kernel version specific, and may not work on your version.
 # It is a workaround, and proof of concept for ftrace, until more kernel tracing
@@ -18,8 +18,8 @@
 #
 # Run "fsyncsnoop -h" for full usage.
 #
-# REQUIREMENTS: FTRACE CONFIG, syscalls:sys_enter/exit_ftrace tracepoints, awk
-# and /proc/<pid>/fd/<fd>
+# REQUIREMENTS: FTRACE CONFIG, syscalls:sys_enter/exit_ftrace tracepoints, awk,
+# python and /proc/<pid>/fd/<fd>
 #
 #
 # From perf-tools: https://github.com/brendangregg/perf-tools
@@ -149,6 +149,9 @@ fi
 # workaround for gawk strtonum()
 [[ -x /usr/bin/gawk ]] && awk="gawk --non-decimal-data"
 
+### select python
+[[ -x /usr/bin/python ]] && python="python -u -c"
+
 ### check permissions
 cd $tracing || die "ERROR: accessing tracing. Root user? Kernel has FTRACE?
     debugfs mounted? (mount -t debugfs debugfs /sys/kernel/debug)"
@@ -195,91 +198,108 @@ warn "echo > trace"
 else
 	# print buffer live
 	cat trace_pipe
-fi ) | $awk -v o=$offset -v opt_name=$opt_name -v name=$name \
-    -v opt_duration=$opt_duration -v opt_time=$opt_time -v time_ms=$time_ms \
-    -v opt_fail=$opt_fail -v opt_file=$opt_file -v file=$file '
-	function free() {
-		delete time_enter[pid, fd]
-		delete lastfile[pid, fd]
-		delete enter_flag[pid, fd]
-		delete lastfd[pid]
-	}
-	
-	# common fields
-	$1 != "#" {
-		# task name can contain dashes
-		comm = pid = $1
-		sub(/-[0-9][0-9]*/, "", comm)
-		if (opt_name && match(comm, name) == 0)
-			next
-		sub(/.*-/, "", pid)
+fi ) | $python '#!/usr/bin/python
+import sys
+import os
+import re
+from sys import argv
 
-	}
+(script, offset, opt_name, name, opt_time, time_ms, opt_fail,
+    opt_file, file) = argv
 
-	# sys_fsync() enter
-	$1 != "#" && $(4+o) ~ /sys_fsync\(/ {
-		fd = $NF
-		sub(/\)$/, "", fd)
-		fd = int("0x"fd)
+#initializations
+o = int(offset, 10)
+if (opt_time == "1"):
+    time_ms = float(time_ms)
 
-		#Guess filename, it may not be correct if fd had been closed
-		cmd = "readlink /proc/"pid"/fd/"fd
-		cmd | getline filename
-		close(cmd)
+lastfd = {}
+lastname = {}
+lasttime = {}
+enter_flag = {}
 
-		if (opt_file && filename !~ file)
-			next
+#free context
+def free_context():
+    del lastname[pid, fd]
+    del lasttime[pid, fd]
+    del enter_flag[pid, fd]
+    del lastfd[pid]
 
-		time_enter[pid, fd] = $(3+o); sub(":", "", time_enter[pid, fd])
-		lastfd[pid] = fd
-		lastname[pid, fd] = filename
-		enter_flag[pid, fd] = 1;
-	}
+#main loop
+while True:
+    try:
+        line = sys.stdin.readline()
+        if not line:
+            break
 
-	# sys_fsync() exit
-	$1 != "#" && $(4+o) == "sys_fsync" {
-		fd = lastfd[pid]
-		filename = lastname[pid, fd]
+        # common fields
+        if (line.find("#") != 0):
+            line = line.strip()
+            keyidx = line.find("-")
+            comm = line[0:keyidx]
 
-		if (opt_file && filename !~ file) {
-			free()
-			next
-		}
+            if (opt_name == "1" and comm.find(name) < 0):
+                continue
 
-		if (enter_flag[pid, fd] == 1) {
-			rval = $NF
-		} else {
-			# Skip the exit entry
-			printf "%-16.16s pid:%s, fd:%s " \
-			    "has no matched enter api fd_table %s\n", comm, pid, fd
-			next
-		}
+            subline = line[keyidx+1:len(line)]
+            fields = subline.split()
+            # Array indices start at 0 unlike AWK
+            pid = fields[0]
 
-		# matched failed as beginning with 0xfffff
-		if (opt_fail && rval !~ /0xfffff/) {
-			free()
-			next
-		}
 
-		time_exit = $(3+o); sub(":", "", time_exit)
+        # sys_fsync() enter
+        if (line.find("sys_fsync(fd:") > 0):
+            fd = fields[4+o].replace(")", "")
+            fd = int(fd,16)
+            path = "/proc/%s/fd/%d"%(pid, fd)
+            # guess the filename. It may not be correct as fd could
+            # be closed and opened for another file.
+            try:
+                filename = os.readlink(path)
+            except OSError as e:
+                filename = "***the fd has closed[%s]"%path
 
-		latency = 1000 * (time_exit - time_enter[pid, fd]);
+            # save context
+            lastfd[pid] = fd
+            lastname[pid, fd] = filename
+            lasttime[pid, fd] = float(fields[2+o].replace(":", ""))
+            enter_flag[pid, fd] = 1
 
-		if (opt_time && latency < time_ms) {
-			free()
-			next
-		}
+        # sys_fsync() exit
+        if (line.find("sys_fsync ->") > 0):
+            fd = lastfd[pid]
+            filename = lastname[pid, fd]
+            time_enter = lasttime[pid, fd]
 
-		latency = sprintf("%.2f", latency);
+            if (opt_file == "1"):
+                match = re.match(r".*"+file+".*", filename)
+                if not match:
+                    free_context()
+                    continue
 
-		printf "%-16.16s %-6s %6s %4s %s %s\n",
-		    comm, pid, latency, fd, rval, filename
+            if enter_flag[pid, fd] == 1:
+                rval = fields[5+o]
+                time_exit = float(fields[2+o].replace(":", ""))
+                latency = (time_exit-time_enter)*1000
+                if (opt_time == "1" and latency < time_ms):
+                    free_context()
+                    continue
+                latency = "%.2f"%latency
+                print "%-16.16s %-6s %6s %4s %s %s"%(
+                    comm, pid, latency, fd, rval, filename)
+                free_context()
+            else:
+                print "WARNING: fsync exit without matched fsync enter"
+                print line
 
-		free()
-	}
+        # LOST event
+        if re.match(r"LOST.*EVENTS", line):
+            print "WARNING: Detect LOST EVENTs"
+            print line
 
-	$0 ~ /LOST.*EVENTS/ { print "WARNING: " $0 > "/dev/stderr" }
-'
+    except KeyboardInterrupt as e:
+        break
+' "$offset" "$opt_name" "$name" "$opt_time" "$time_ms" "$opt_fail" \
+    "$opt_file" "$file"
 
 ### end tracing
 end
