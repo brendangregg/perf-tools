@@ -255,7 +255,7 @@ while True:
             # be closed and opened for another file.
             try:
                 filename = os.readlink(path)
-            except OSError as e:
+            except OSError:
                 filename = "***the fd has closed[%s]"%path
 
             # save context
@@ -296,7 +296,7 @@ while True:
             print "WARNING: Detect LOST EVENTs"
             print line
 
-    except KeyboardInterrupt as e:
+    except KeyboardInterrupt:
         break
 ' "$offset" "$opt_name" "$name" "$opt_time" "$time_ms" "$opt_fail" \
     "$opt_file" "$file"
