@@ -207,12 +207,15 @@ fi ) | $awk -v o=$offset -v opt_name=$opt_name -v name=$name \
     -v opt_file=$opt_file -v file=$file '
 	# common fields
 	$1 != "#" {
-		# task name can contain dashes
-		comm = pid = $1
-		sub(/-[0-9][0-9]*/, "", comm)
+		# task name can contain dashes and space
+		split($0, line, "-")
+		sub(/^[ \t\r\n]+/, "", line[1])
+		comm = line[1]
 		if (opt_name && match(comm, name) == 0)
 			next
-		sub(/.*-/, "", pid)
+		pid = line[2]
+		split(pid, line, " ")
+		pid = line[1]
 	}
 
 	# do_sys_open()
