@@ -162,7 +162,7 @@ This preserves tabs (which copy-n-paste can mess up).
 If you use ArchLinux you can install the AUR package:
 
 ```
-bash <(curl aur.sh) -si perftools-git>
+bash <(curl aur.sh) -si perftools-git
 ```
 
 ## Warnings
