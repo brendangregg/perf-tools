@@ -159,6 +159,12 @@ wget https://raw.githubusercontent.com/brendangregg/perf-tools/master/iosnoop
 
 This preserves tabs (which copy-n-paste can mess up).
 
+If you use ArchLinux you can install the AUR package:
+
+```
+bash <(curl aur.sh) -si perftools-git>
+```
+
 ## Warnings
 
 Ftrace was first added to Linux 2.6.27, and perf_events to Linux 2.6.31. These early versions had kernel bugs, and lockups and panics have been reported on 2.6.32 series kernels. This includes CentOS 6.x. If you must analyze older kernels, these tools may only be useful in a fault-tolerant environment, such as a lab with simulated issues. These tools have been primarily developed on Linux 3.2 and later kernels.
