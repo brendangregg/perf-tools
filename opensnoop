@@ -93,6 +93,7 @@ function end {
 	fi
 	warn "echo -:getnameprobe >> kprobe_events"
 	warn "echo > trace"
+	warn "echo 0 > tracing_on"
 	(( wroteflock )) && warn "rm $flock"
 }
 
@@ -172,6 +173,9 @@ if (( opt_pid )); then
 	then
 	    edie "ERROR: setting -p $pid. Exiting."
 	fi
+fi
+if ! echo 1 > tracing_on; then
+	edie "ERROR: enabling tracing. Exiting."
 fi
 if ! echo 1 > events/kprobes/getnameprobe/enable; then
 	edie "ERROR: enabling kprobe for getname(). Exiting."
