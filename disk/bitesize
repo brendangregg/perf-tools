@@ -85,8 +85,11 @@ sectors=(${buckets[*]})
 ((max_i = ${#buckets[*]} - 1))
 while (( i <= max_i )); do
 	(( sectors[$i] = ${sectors[$i]} * 1024 / $secsz ))
-	if (( i && ${sectors[$i]} <= ${sectors[$i - 1]} )); then
-		die "ERROR: bucket list must increase in size."
+	# avoid negative array index errors for old version bash
+	if (( i > 0 ));then
+		if (( ${sectors[$i]} <= ${sectors[$i - 1]} )); then
+			die "ERROR: bucket list must increase in size."
+		fi
 	fi
 	(( i++ ))
 done
@@ -136,7 +139,8 @@ echo
 echo "$stat" | awk -v tpoint=$tpoint -v max_i=$max_i -v most=$most '
 	function star(sval, smax, swidth) {
 		stars = ""
-		if (smax == 0) return ""
+		# using int could avoid error on gawk
+		if (int(smax) == 0) return ""
 		for (si = 0; si < (swidth * sval / smax); si++) {
 			stars = stars "#"
 		}
