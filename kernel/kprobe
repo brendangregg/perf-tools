@@ -82,6 +82,8 @@ function usage {
 	                                 # trace open() with filename
 	       kprobe -s 'p:myprobe tcp_retransmit_skb'
 	                                 # show kernel stacks
+	       kprobe 'p:do_sys_open file=+0(%si):string' 'file ~ "*stat"'
+	                                 # opened files ending in "stat"
 
 	See the man page and example file for more info.
 END
@@ -145,7 +147,7 @@ if (( $# )); then
 fi
 
 ### option logic
-(( opt_pid && opt_filter )) && die "ERROR: use either -p or -f."
+(( opt_pid && opt_filter )) && die "ERROR: use either -p or a filter."
 (( opt_duration && opt_view )) && die "ERROR: use either -d or -v."
 if (( opt_pid )); then
 	# convert to filter
@@ -187,7 +189,8 @@ cd $tracing || die "ERROR: accessing tracing. Root user? Kernel has FTRACE?
 ## check function
 set -- $kprobe
 fname=$2
-if (( !opt_force )) && ! grep -w $fname available_filter_functions 2>/dev/null
+if (( !opt_force )) && ! grep -w $fname available_filter_functions >/dev/null \
+    2>&1
 then
 	echo >&2 "ERROR: func $fname not in $PWD/available_filter_functions."
 	printf >&2 "Either it doesn't exist, or, it might be unsafe to kprobe. "
