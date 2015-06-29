@@ -173,15 +173,11 @@ function set_addr {
 	type=$(file $path)
 	if [[ "$type" != *shared?object* ]]; then
 		# subtract the base mapping address. see Documentation/trace/
-		# uprobetracer.txt to understand the following steps.
-		pid=$(pgrep -nx $name)
-		[[ "$pid" == "" ]] && die "ERROR: no PID found for \"$name\"."
-		range=$(grep 'r-xp.*'$path /proc/$pid/maps)
-		[[ "$range" == "" ]] && \
-		    die "ERROR: no addr range found for PID $pid and segment" \
-		    "$path. Searched for r-xp in /proc/$pid/maps."
-		base=$range
-		base=0x${base%%-*}
+		# uprobetracer.txt for background.
+		base=$(objdump -x $path | awk '
+		    $1 == "LOAD" && $3 ~ /^[0x]*$/ { print $5 }')
+		[[ "$base" != 0x* ]] && die "ERROR: finding base load addr"\
+		    "for $path."
 		addr=$(( addr - base ))
 		if (( addr < 0 )); then
 			echo "WARNING: problems removing base addr from $sym." \
