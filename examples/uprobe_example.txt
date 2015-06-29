@@ -225,9 +225,9 @@ version's function names and platform's register usage.
            uprobe p:/bin/bash:readline
        # trace the return of readline() with return value as a string:
            uprobe 'r:bash:readline +0($retval):string'
-       # trace strcpy() calls in all running libc shared libraries:
+       # trace sleep() calls in all running libc shared libraries:
            uprobe p:libc:sleep
-       # trace strcpy() with register %di (x86):
+       # trace sleep() with register %di (x86):
            uprobe 'p:libc:sleep %di'
        # trace this address (use caution, can cause failures):
            uprobe p:libc:0xbf130
