@@ -33,7 +33,7 @@ Using ftrace:
 - kernel/[funcslower](kernel/funcslower): trace kernel functions slower than a threshold. [Examples](examples/funcslower_example.txt).
 - kernel/[funcgraph](kernel/funcgraph): trace a graph of kernel function calls, showing children and times. [Examples](examples/funcgraph_example.txt).
 - kernel/[kprobe](kernel/kprobe): dynamically trace a kernel function call or its return, with variables. [Examples](examples/kprobe_example.txt).
-- user/[uprobe](kernel/uprobe): dynamically trace a user-level function call or its return, with variables. [Examples](examples/uprobe_example.txt).
+- user/[uprobe](user/uprobe): dynamically trace a user-level function call or its return, with variables. [Examples](examples/uprobe_example.txt).
 - tools/[reset-ftrace](tools/reset-ftrace): reset ftrace state if needed. [Examples](examples/reset-ftrace_example.txt).
 
 Using perf_events:
