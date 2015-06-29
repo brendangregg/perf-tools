@@ -161,6 +161,62 @@ The argument $retval was given a vanity name "file", which was then tested in
 the filter expression "file == 0".
 
 
+Overhead is relative to the rate of events: a higher rate of traced events,
+means uprobe costs higher overhead. If you are unsure of the rate of events,
+you can capture a set number only, or trace for a limited duration only (covered
+in the next example). To trace a set number only, you can pipe into head, eg:
+
+# ./uprobe -p 11982 p:bash:sh_malloc | head -15
+Tracing uprobe sh_malloc (p:sh_malloc /bin/bash:0xaafa0). Ctrl-C to end.
+            bash-11982 [001] d... 19643121.529484: sh_malloc: (0x4aafa0)
+            bash-11982 [001] d... 19643121.529493: sh_malloc: (0x4aafa0)
+            bash-11982 [001] d... 19643121.529506: sh_malloc: (0x4aafa0)
+            bash-11982 [001] d... 19643121.529510: sh_malloc: (0x4aafa0)
+            bash-11982 [001] d... 19643121.529519: sh_malloc: (0x4aafa0)
+            bash-11982 [001] d... 19643121.529521: sh_malloc: (0x4aafa0)
+            bash-11982 [001] d... 19643121.529523: sh_malloc: (0x4aafa0)
+            bash-11982 [001] d... 19643121.529525: sh_malloc: (0x4aafa0)
+            bash-11982 [001] d... 19643121.529531: sh_malloc: (0x4aafa0)
+            bash-11982 [001] d... 19643121.529533: sh_malloc: (0x4aafa0)
+            bash-11982 [001] d... 19643121.529536: sh_malloc: (0x4aafa0)
+            bash-11982 [001] d... 19643121.529541: sh_malloc: (0x4aafa0)
+            bash-11982 [001] d... 19643121.529546: sh_malloc: (0x4aafa0)
+            bash-11982 [001] d... 19643121.529549: sh_malloc: (0x4aafa0)
+
+uprobe traps SIGPIPE, so that it properly exits and cleans up probes when used
+in this fashion.
+
+Note the timestamps: by examining the rate they are increasing, you can have
+some estimation for the rate of events. In this case, the 15 events all
+happened within the same millisecond (the timestamp column is in units of
+seconds), which suggests these are frequent events.
+
+
+The -d option can be used to specify a duration for tracing, which also causes
+uprobe to perform in-kernel buffering, which reduces the overhead of tracing:
+
+# ./uprobe -d 5 p:libc:gettimeofday
+Tracing uprobe gettimeofday for 5 seconds (buffered)...
+           sleep-12743 [001] d... 19642858.943440: gettimeofday: (0x7f400138ac10)
+       rotatelog-12744 [000] d... 19642858.955665: gettimeofday: (0x7f0ba34ebc10)
+       rotatelog-12745 [003] d... 19642858.956425: gettimeofday: (0x7f1e6db20c10)
+       rotatelog-12744 [000] d... 19642858.956924: gettimeofday: (0x7f0ba34ebc10)
+       rotatelog-12745 [003] d... 19642858.957608: gettimeofday: (0x7f1e6db20c10)
+       rotatelog-12744 [001] d... 19642858.958005: gettimeofday: (0x7fd8a1d64c10)
+       rotatelog-12744 [003] d... 19642858.959496: gettimeofday: (0x7f9531acdc10)
+           mkdir-12746 [002] d... 19642858.959542: gettimeofday: (0x7fd539474c10)
+           chown-12747 [001] d... 19642858.961455: gettimeofday: (0x7ff5646afc10)
+       rotatelog-12745 [000] d... 19642858.963065: gettimeofday: (0x7f406aca7c10)
+       rotatelog-12745 [001] d... 19642858.964280: gettimeofday: (0x7f6548debc10)
+       rotatelog-12749 [000] d... 19642859.977462: gettimeofday: (0x7fecaf7e1c10)
+       rotatelog-12750 [003] d... 19642859.977697: gettimeofday: (0x7f821eb3cc10)
+       rotatelog-12749 [000] d... 19642859.978707: gettimeofday: (0x7fecaf7e1c10)
+[...]
+
+You will not see live output during the -d mode, as it is being buffered
+in-kernel.
+
+
 Tracing func_abc() in my test program, and including user-level stacks:
 
 # ./uprobe -s p:/root/func_abc:func_c
