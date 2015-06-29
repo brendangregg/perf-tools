@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# uprobe - trace a given uprobe definition. Kernel dynamic tracing.
+# uprobe - trace a given uprobe definition. User-level dynamic tracing.
 #          Written using Linux ftrace. Experimental.
 #
 # This will create, trace, then destroy a given uprobe definition. See
