@@ -8,7 +8,8 @@
 # syntax of a uprobe definition, and "uprobe -h" for examples. With this tool,
 # the probe alias is optional (it will default to something meaningful).
 #
-# USAGE: ./uprobe [-FhHsv] [-d secs] [-p pid] uprobe_definition [filter]
+# USAGE: ./uprobe [-FhHsv] [-d secs] [-p pid] {-l target |
+#                 uprobe_definition [filter]}
 #
 # Run "uprobe -h" for full usage.
 #
