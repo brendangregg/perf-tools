@@ -17,6 +17,11 @@ believe newer kernels (post 4.0) are relatively safer, but use caution. Test
 in a lab environment, and know what you are doing, before use. Also consider
 other (more developed) user-level tracers (perf_events, LTTng, etc.).
 
+Use extreme caution with the raw address mode: eg, "p:libc:0xbf130". uprobe
+does not check for instruction alignment, so tracing the wrong address (eg,
+mid-way through a multi-byte instruction) will corrupt the target's memory.
+Other tracers (eg, perf_events with debuginfo) check alignment.
+
 Also beware of widespread tracing that interferes with the operation of the
 system, eg, tracing libc:malloc, which by-default will trace _all_ processes.
 
@@ -99,7 +104,7 @@ trace sleep() with register %di (x86):
 #
 .B uprobe 'p:libc:sleep %di'
 .TP
-trace this address (use caution, can cause failures):
+trace this address (use caution: must be instruction aligned):
 #
 .B uprobe p:libc:0xbf130
 .TP

@@ -285,7 +285,7 @@ version's function names and platform's register usage.
            uprobe p:libc:sleep
        # trace sleep() with register %di (x86):
            uprobe 'p:libc:sleep %di'
-       # trace this address (use caution, can cause failures):
+       # trace this address (use caution: must be instruction aligned):
            uprobe p:libc:0xbf130
        # trace gettimeofday() for PID 1182 only:
            uprobe -p 1182 p:libc:gettimeofday

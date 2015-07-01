@@ -19,6 +19,11 @@
 # believe newer kernels (post 4.0) are relatively safer, but use caution. Test
 # in a lab environment, and know what you are doing, before use.
 #
+# Use extreme caution with the raw address mode: eg, "p:libc:0xbf130". uprobe
+# does not check for instruction alignment, so tracing the wrong address (eg,
+# mid-way through a multi-byte instruction) will corrupt the target's memory.
+# Other tracers (eg, perf_events with debuginfo) check alignment.
+#
 # Also beware of widespread tracing that interferes with the operation of the
 # system, eg, tracing libc:malloc, which by-default will trace _all_ processes.
 # Test in a lab environment before use.
@@ -90,7 +95,7 @@ function usage {
 	           uprobe p:libc:sleep
 	       # trace sleep() with register %di (x86):
 	           uprobe 'p:libc:sleep %di'
-	       # trace this address (use caution, can cause failures):
+	       # trace this address (use caution: must be instruction aligned):
 	           uprobe p:libc:0xbf130
 	       # trace gettimeofday() for PID 1182 only:
 	           uprobe -p 1182 p:libc:gettimeofday
@@ -180,11 +185,8 @@ function set_addr {
 		[[ "$base" != 0x* ]] && die "ERROR: finding base load addr"\
 		    "for $path."
 		addr=$(( addr - base ))
-		if (( addr < 0 )); then
-			echo "WARNING: problems removing base addr from $sym." \
-			    "Trying untransposed addr."
-			addr=$(( addr + base ))
-		fi
+		(( addr < 0 )) && die "ERROR: transposed address for $sym"\
+		    "became negative: $addr"
 		addr=0x$( printf "%x" $addr)
 	fi
 }
