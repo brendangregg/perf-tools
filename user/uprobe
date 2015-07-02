@@ -151,8 +151,8 @@ function set_path {
 		    { sub(/\..*/, "", $1); }
 		    $1 == lib { print path "/" $3 }')
 		if [[ "$path" == "" ]]; then
-			die "ERROR: segment \"$name\" ambiguous.
-			    program or library? Try a full path."
+			die "ERROR: segment \"$name\" ambiguous." \
+			    "Program or library? Try a full path."
 		fi
 	fi
 
@@ -170,7 +170,7 @@ function set_addr {
 	[[ "$sym" == "" ]] && die "ERROR: missing symbol for $path"
 
 	addr=$(objdump -tT $path | awk -v sym=$sym '
-	    $NF == sym { print $1; exit }')
+	    $NF == sym && $4 == ".text"  { print $1; exit }')
 	[[ "$addr" == "" ]] && die "ERROR: missing symbol \"$sym\" in $path"
 	(( 0x$addr == 0 )) && die "ERROR: failed resolving \"$sym\" in $path." \
 	    "Maybe it exists in a different target (eg, library)?"
@@ -276,6 +276,7 @@ set -- $urest
 if [[ $1 == *:* ]]; then
 	uname=; probe=$1; shift; uargs="$@"
 else
+	[[ $2 != *:* ]] && die "ERROR: invalid probe. See usage (-h)."
 	uname=$1; probe=$2; shift 2; uargs="$@"
 fi
 path=$probe; path=${path%%:*}
