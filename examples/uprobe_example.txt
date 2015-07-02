@@ -161,6 +161,31 @@ The argument $retval was given a vanity name "file", which was then tested in
 the filter expression "file == 0".
 
 
+Here's an example of tracing the MySQL server dispatch_command() function, along
+with the query string (note: the %dx register is only valid for this
+architecture and this software build):
+
+# ./uprobe 'p:dispatch_command /opt/mysql/bin/mysqld:_Z16dispatch_command19enum_server_commandP3THDPcj +0(%dx):string'
+Tracing uprobe dispatch_command (p:dispatch_command /opt/mysql/bin/mysqld:0x2dbd40 +0(%dx):string). Ctrl-C to end.
+          mysqld-2855  [001] d... 19956674.509085: dispatch_command: (0x6dbd40) arg1="show tables"
+          mysqld-2855  [001] d... 19956675.541155: dispatch_command: (0x6dbd40) arg1="SELECT * FROM numbers where number > 32000"
+^C
+Ending tracing...
+
+The function name, "_Z16dispatch_command19enum_server_commandP3THDPcj", is the
+C++ mangled symbol.
+
+I can name the query string argument "cmd" then test it in a filter; eg, to only
+match queries that begin with "SELECT":
+
+# ./uprobe 'p:dispatch_command /opt/mysql/bin/mysqld:_Z16dispatch_command19enum_server_commandP3THDPcj cmd=+0(%dx):string' 'cmd ~ "SELECT*"'
+Tracing uprobe dispatch_command (p:dispatch_command /opt/mysql/bin/mysqld:0x2dbd40 cmd=+0(%dx):string). Ctrl-C to end.
+          mysqld-2855  [001] d... 19956754.619958: dispatch_command: (0x6dbd40) cmd="SELECT * FROM numbers where number > 32000"
+          mysqld-2855  [001] d... 19956755.060125: dispatch_command: (0x6dbd40) cmd="SELECT * FROM numbers where number > 32000"
+^C
+Ending tracing...
+
+
 Overhead is relative to the rate of events: a higher rate of traced events,
 means uprobe costs higher overhead. If you are unsure of the rate of events,
 you can capture a set number only, or trace for a limited duration only (covered
