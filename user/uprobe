@@ -239,6 +239,13 @@ END
 	exit
 fi
 
+### check command dependencies
+for cmd in file objdump ldconfig awk; do
+	which $cmd > /dev/null
+	(( $? != 0 )) && die "ERROR: missing $cmd in \$PATH. $0 needs" \
+	    "to use this command. Exiting."
+done
+
 ### option logic
 [[ "$uprobe" == "" ]] && usage
 (( opt_pid && opt_filter )) && die "ERROR: use either -p or a filter."
