@@ -233,9 +233,8 @@ if (( opt_force == 0 && $maj < 4 )); then
 	
 	Background: uprobes were first added in 3.5. I've tested them on 3.13,
 	and found them unsafe, as they can crash or lock up processes, which can
-	effectively lock up the system. On 4.0, uprobes seem much safer (but may
-	not be 100%). They may be safer (safe?) on other 3.x kernels, but I
-	don't know. You can use -F to force tracing, but you've been warned.
+	effectively lock up the system. On 4.0, uprobes seem much safer. You
+	can use -F to force tracing, but you've been warned.
 END
 	exit
 fi
