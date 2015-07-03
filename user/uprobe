@@ -220,7 +220,7 @@ if (( opt_list )); then
 		set_path $target
 		target=$path
 	fi
-	objdump -tT $target | awk '$4 == ".text" { print $NF }' | sort
+	objdump -tT $target | awk '$4 == ".text" { print $NF }' | sort | uniq
 	exit
 fi
 
