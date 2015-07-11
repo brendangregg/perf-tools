@@ -76,7 +76,7 @@ function usage {
 	                 -F              # force. trace despite warnings.
 	                 -d seconds      # trace duration, and use buffers
 	                 -l target       # list functions from this executable
-	                 -p PID          # PID to match on I/O issue
+	                 -p PID          # PID to match on events
 	                 -v              # view format file (don't trace)
 	                 -H              # include column headers
 	                 -s              # show user stack traces
