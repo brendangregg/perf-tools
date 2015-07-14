@@ -372,5 +372,7 @@ version's function names and platform's register usage.
                                  # trace open() with filename
        kprobe -s 'p:myprobe tcp_retransmit_skb'
                                  # show kernel stacks
+       kprobe 'p:do_sys_open file=+0(%si):string' 'file ~ "*stat"'
+                                 # opened files ending in "stat"
 
 See the man page and example file for more info.
