@@ -142,7 +142,7 @@ if (( opt_count && opt_verbose )); then
 	if (( write_workaround )); then
 		# this list must end in write to associate the filter
 		tp=$(perf list syscalls:sys_enter_* | awk '
-		    $1 != "syscalls:sys_enter_write" { printf "-e %s ", $1 }')
+		    $1 != "syscalls:sys_enter_write" &&  $1 ~ /syscalls:/ { printf "-e %s ", $1 }')
 		tp="$tp -e syscalls:sys_enter_write"
 		sh -c "perf record $tp --filter 'common_pid != '\$\$ $cpus $cmd"
 	else
@@ -151,8 +151,8 @@ if (( opt_count && opt_verbose )); then
 	fi
 
 	printf "%-6s %-16s %-17s %8s\n" "PID" "COMM" "SYSCALL" "COUNT"
-	perf script -f pid,comm,event | awk '$1 != "#" {
-		sub("sys_enter_", ""); sub(":", "")
+	perf script --fields pid,comm,event | awk '$1 != "#" {
+		sub("syscalls:sys_enter_", ""); sub(":", "")
 		a[$1 ";" $2 ";" $3]++
 	}
 	END {
@@ -174,7 +174,7 @@ fi
 
 if (( opt_verbose )); then
 	printf "%-6s %-16s %8s\n" "PID" "COMM" "COUNT"
-	perf script -f pid,comm | awk '$1 != "#" { a[$1 ";" $2]++ }
+	perf script --fields pid,comm | awk '$1 != "#" { a[$1 ";" $2]++ }
 	END {
 		for (k in a) {
 			split(k, b, ";");
@@ -183,7 +183,7 @@ if (( opt_verbose )); then
 	}' | sort -n -k3 | $tcmd
 else
 	printf "%-16s %8s\n" "COMM" "COUNT"
-	perf script -f comm | awk '$1 != "#" { a[$1]++ }
+	perf script --fields comm | awk '$1 != "#" { a[$1]++ }
 	END {
 		for (k in a) {
 			printf "%-16s %8d\n", k,  a[k]
