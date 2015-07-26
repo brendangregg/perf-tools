@@ -190,6 +190,8 @@ A case study and summary:
 
 Related articles:
 
+- 28 Jun 2015: http://www.brendangregg.com/blog/2015-06-28/linux-ftrace-uprobe.html
+- 31 Dec 2014: http://www.brendangregg.com/blog/2014-12-31/linux-page-cache-hit-ratio.html
 - 06 Sep 2014: http://www.brendangregg.com/blog/2014-09-06/linux-ftrace-tcp-retransmit-tracing.html
 - 28 Jul 2014: http://www.brendangregg.com/blog/2014-07-28/execsnoop-for-linux.html
 - 25 Jul 2014: http://www.brendangregg.com/blog/2014-07-25/opensnoop-for-linux.html
