@@ -41,16 +41,17 @@
 # 30-Jun-2014	Brendan Gregg	Created this.
 
 opt_buckets=0; buckets=; opt_power=0; power=4; opt_max=0; max=$((1024 * 1024))
-duration=0; debug=0
+opt_filter=0; filter=; duration=0; debug=0
 trap ':' INT QUIT TERM PIPE HUP
 
 function usage {
 	cat <<-END >&2
-	USAGE: perf-stat-hist [-h] [-b buckets|-P power] [-m max] tracepoint
-	                      variable [seconds]
+	USAGE: perf-stat-hist [-h] [-b buckets|-P power] [-m max] [-f filter]
+	                      tracepoint variable [seconds]
 	                 -b buckets      # specify histogram bucket points
 	                 -P power        # power-of (default is 4)
 	                 -m max          # max value for power-of
+	                 -f filter       # specify a filter 
 	                 -h              # this usage message
 	   eg,
 	       perf-stat-hist syscalls:sys_enter_read count 5
@@ -65,6 +66,8 @@ function usage {
 	                 # ... histogram based on these bucket ranges
 	       perf-stat-hist -b 10 syscalls:sys_exit_read ret 5
 	                 # ... bifurcate by the value 10 (lowest overhead)
+	       perf-stat-hist -f 'rwbs == "WS"' block:block_rq_complete nr_sector 5
+	                 # ... synchronous writes histogram, 5 seconds
 
 	See the man page and example file for more info.
 END
@@ -77,12 +80,13 @@ function die {
 }
 
 ### process options
-while getopts b:hm:P: opt
+while getopts b:hm:P:f: opt
 do
 	case $opt in
 	b)	opt_buckets=1; buckets=($OPTARG) ;;
 	P)	opt_power=1; power=$OPTARG ;;
 	m)	opt_max=1; max=$OPTARG ;;
+	f)	opt_filter=1; filter="$OPTARG && " ;;
 	h|?)	usage ;;
 	esac
 done
@@ -118,20 +122,20 @@ fi
 ### build list of tracepoints and filters for each histogram bucket
 max=${buckets[${#buckets[@]} - 1]}	# last element
 ((max_i = ${#buckets[*]} - 1))
-tpoints="-e $tpoint --filter \"$var < ${buckets[0]}\""
+tpoints="-e $tpoint --filter \"$filter $var < ${buckets[0]}\""
 awkarray=
 i=0
 while (( i < max_i )); do
 	if (( i && ${buckets[$i]} <= ${buckets[$i - 1]} )); then
 		die "ERROR: bucket list must increase in size."
 	fi
-	tpoints="$tpoints -e $tpoint --filter \"$var >= ${buckets[$i]} && "
+	tpoints="$tpoints -e $tpoint --filter \"$filter $var >= ${buckets[$i]} && "
 	tpoints="$tpoints $var < ${buckets[$i + 1]}\""
 	awkarray="$awkarray buckets[$i]=${buckets[$i]};"
 	(( i++ ))
 done
 awkarray="$awkarray buckets[$max_i]=${buckets[$max_i]};"
-tpoints="$tpoints -e $tpoint --filter \"$var >= ${buckets[$max_i]}\""
+tpoints="$tpoints -e $tpoint --filter \"$filter $var >= ${buckets[$max_i]}\""
 
 if (( debug )); then
 	echo buckets: ${buckets[*]}
@@ -147,10 +151,16 @@ else
 	etext="until Ctrl-C"
 	cmd="sleep 999999"
 fi
+
+p_tpoint=$tpoint
+if [ -n "$filter" ]; then 
+	p_tpoint="$tpoint (Filter: ${filter%????})"
+fi
+
 if (( opt_buckets )); then
-	echo "Tracing $tpoint, specified buckets, $etext..."
+	echo "Tracing $p_tpoint, specified buckets, $etext..."
 else
-	echo "Tracing $tpoint, power-of-$power, max $max, $etext..."
+	echo "Tracing $p_tpoint, power-of-$power, max $max, $etext..."
 fi
 
 ### run perf
