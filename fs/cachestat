@@ -117,7 +117,7 @@ if ! echo 1 > function_profile_enabled; then
 	die "ERROR: enabling function profiling. Have CONFIG_FUNCTION_PROFILER? Exiting."
 fi
 
-(( opt_timestamp )) && printf "%-8s " TIME
+(( opt_timestamp )) && printf "%-8s \t" TIME
 printf "%8s %8s %8s %8s %12s %10s" HITS MISSES DIRTIES RATIO "BUFFERS_MB" "CACHE_MB"
 (( opt_debug )) && printf "  DEBUG"
 echo
@@ -130,7 +130,7 @@ while (( !quit && (!opt_duration || secs < duration) )); do
 	echo 1 > function_profile_enabled
 	sleep $interval
 
-	(( opt_timestamp )) && printf "%(%H:%M:%S)T " -1
+	(( opt_timestamp )) && date=$(date +"%b %d %T") && echo -n ${date/\n//} 
 
 	# cat both meminfo and trace stats, and let awk pick them apart
 	cat /proc/meminfo trace_stat/function* | awk -v debug=$opt_debug '
