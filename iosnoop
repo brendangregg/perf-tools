@@ -53,7 +53,10 @@
 # 12-Jul-2014	Brendan Gregg	Created this.
 
 ### default variables
-tracing=/sys/kernel/debug/tracing
+mkdir -p /sys/kernel/debug/tracing/instances/execsnoop
+echo context-info > /sys/kernel/debug/tracing/instances/execsnoop/trace_options
+tracing=/sys/kernel/debug/tracing/instances/execsnoop
+current_tracer=/sys/kernel/debug/tracing/current_tracer
 flock=/var/tmp/.ftrace-lock
 bufsize_kb=4096
 opt_duration=0; duration=; opt_name=0; name=; opt_pid=0; pid=; ftext=
@@ -177,7 +180,7 @@ cd $tracing || die "ERROR: accessing tracing. Root user? Kernel has FTRACE?
 echo $$ > $flock || die "ERROR: unable to write $flock."
 
 ### setup and begin tracing
-echo nop > current_tracer
+echo nop > $current_tracer
 warn "echo $bufsize_kb > buffer_size_kb"
 filter=
 if (( opt_iotype )); then
