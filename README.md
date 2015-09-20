@@ -42,6 +42,10 @@ Using perf_events:
 - [syscount](syscount): count syscalls by syscall or process. [Examples](examples/syscount_example.txt).
 - disk/[bitesize](disk/bitesize): histogram summary of disk I/O size. [Examples](examples/bitesize_example.txt).
 
+Using eBPF:
+
+- As a preview of things to come, see the bcc tracing [Tools section](https://github.com/iovisor/bcc/blob/master/README.md#tracing). These use [bcc](https://github.com/iovisor/bcc), a front end for using [eBPF](http://www.brendangregg.com/blog/2015-05-15/ebpf-one-small-step.html). bcc+eBPF will allow some of these tools to be rewritten and improved, and additional tools to be created.
+
 ## Screenshots
 
 Showing new processes and arguments:
