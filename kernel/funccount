@@ -136,7 +136,7 @@ while (( !quit && (!opt_duration || secs < duration) )); do
 		for (k in a) {
 			printf "%-30s %8d\n", k,  a[k]
 		}
-	}' | sort -n -k2 | $tcmd
+	}' | sort -nr -k2 | $tcmd
 done
 
 ### end tracing
