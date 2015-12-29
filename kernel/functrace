@@ -159,6 +159,9 @@ if ! echo function > current_tracer; then
 	edie "ERROR: setting current_tracer to \"function\". Exiting."
 fi
 
+### always unpause tracing
+echo 1 > tracing_enabled
+
 ### print trace buffer
 warn "echo > trace"
 if (( opt_duration )); then

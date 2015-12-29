@@ -227,6 +227,9 @@ if (( opt_nodur )); then
 	fi
 fi
 
+### always unpause tracing
+echo 1 > tracing_enabled
+
 ### print trace buffer
 warn "echo > trace"
 if (( opt_duration )); then
