@@ -1,0 +1,94 @@
+.TH funclatency 8  "2015-12-31" "USER COMMANDS"
+.SH NAME
+funclatency \- summarize kernel function latency as a histogram. Uses Linux ftrace.
+.SH SYNOPSIS
+.B funclatency
+[\-hT] [\-f function] [interval [count]]
+.SH DESCRIPTION
+This shows the distribution of latency, allowing modes and latency outliers
+to be identified and studied.
+
+This is a proof of concept tool using ftrace, and involves user space
+processing and related overheads. See the OVERHEAD section.
+
+NOTE: Due to the way trace buffers are switched per interval, there is the
+possibility of losing a small number of invocations (usually less than 1%). The
+summary therefore shows the general distribution, but may be slightly
+incomplete. If 100% of invocations must be studied, use perf and post-process.
+Also note that invocations may be missed when the trace buffer is full: see the
+interval section in OPTIONS.
+
+Since this uses ftrace, only the root user can use this tool.
+.SH REQUIREMENTS
+CONFIG_FTRACE and CONFIG_KPROBE, which you may already have enabled and
+available on recent Linux kernels. And awk.
+.SH OPTIONS
+.TP
+\-f function
+Trace this function. (eg, "vfs_write").
+.TP
+\-h
+Print usage message.
+.TP
+\-T
+Include timestamps with each summary output.
+.TP
+interval
+Interval between summary histograms, in seconds.
+
+During the interval, trace output will be buffered in-kernel, which is then
+read and processed for the summary. This buffer has a fixed size per-CPU (see
+/sys/kernel/debug/tracing/buffer_size_kb). If you think invocations are
+missing, try increasing that size (the bufsize_kb setting in funclatency). With
+the default setting (4 Mbytes), I'd expect this to happen around 50k
+invocations per summary.
+.TP
+count
+Number of summaries to print.
+.SH EXAMPLES
+.TP
+Default output, print a summary of vfs_read latency every 1 second:
+#
+.B funclatency
+.TP
+Print 5 x 1 second summaries:
+#
+.B funclatency 1 5
+.TP
+Trace vfs_write:
+#
+.B funclatency \-f vfs_write
+.SH FIELDS
+.TP
+>=(ms)
+Latency was greater than or equal-to this value, in milliseconds.
+.TP
+<(ms)
+Latency was less than this value, in milliseconds.
+.TP
+Count
+Number of invocations in this latency range, during the interval.
+.TP
+Distribution
+ASCII histogram representation of the Count column.
+.SH OVERHEAD
+Function invocation entry and exit events are traced and buffered in-kernel,
+then processed and summarized in user space. There may be measurable overhead
+with this approach, relative to the time taken by fast functions.
+
+The overhead may be acceptable in many situations. If it isn't, this tool
+can be reimplemented in C, or using a different tracer (eg, perf_events,
+SystemTap, ktap.)
+.SH SOURCE
+This is from the perf-tools collection.
+.IP
+https://github.com/brendangregg/perf-tools
+.PP
+Also look under the examples directory for a text file containing example
+usage, output, and commentary for this tool.
+.SH OS
+Linux
+.SH STABILITY
+Unstable - in development.
+.SH AUTHOR
+Brendan Gregg, Richard Yao

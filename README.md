@@ -29,6 +29,7 @@ Using ftrace:
 - net/[tcpretrans](net/tcpretrans): show TCP retransmits, with address and other details. [Examples](examples/tcpretrans_example.txt).
 - system/[tpoint](system/tpoint): trace a given tracepoint. [Examples](examples/tpoint_example.txt).
 - kernel/[funccount](kernel/funccount): count kernel function calls, matching a string with wildcards. [Examples](examples/funccount_example.txt).
+- kernel/[funclatency](kernel/funclatency): summarize kernel function latency as a histogram. [Examples](examples/funclatency_example.txt).
 - kernel/[functrace](kernel/functrace): trace kernel function calls, matching a string with wildcards. [Examples](examples/functrace_example.txt).
 - kernel/[funcslower](kernel/funcslower): trace kernel functions slower than a threshold. [Examples](examples/funcslower_example.txt).
 - kernel/[funcgraph](kernel/funcgraph): trace a graph of kernel function calls, showing children and times. [Examples](examples/funcgraph_example.txt).
