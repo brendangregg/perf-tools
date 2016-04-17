@@ -17,6 +17,7 @@ These tools were introduced in the USENIX LISA 2014 presentation: Linux Performa
 - video: https://www.usenix.org/conference/lisa14/conference-program/presentation/gregg
 
 ## Contents
+<center><a href="images/perf-tools_2016.png"><img src="images/perf-tools_2016.png" border=0 width=700></a></center>
 
 Using ftrace:
 
