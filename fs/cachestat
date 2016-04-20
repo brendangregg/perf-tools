@@ -130,7 +130,7 @@ while (( !quit && (!opt_duration || secs < duration) )); do
 	echo 1 > function_profile_enabled
 	sleep $interval
 
-	(( opt_timestamp )) && printf "%(%H:%M:%S)T " -1
+	(( opt_timestamp )) && echo -n `date +"%H:%M:%S "`
 
 	# cat both meminfo and trace stats, and let awk pick them apart
 	cat /proc/meminfo trace_stat/function* | awk -v debug=$opt_debug '
