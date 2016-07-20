@@ -90,6 +90,8 @@ sub usage {
 	print STDERR "                  -h      # help message\n";
 	print STDERR "                  -l      # trace TCP tail loss probes\n";
 	print STDERR "                  -s      # print stack traces\n";
+	print STDERR "                  -i      # set wakeup interval by second (default 1s)\n";
+	print STDERR "                  -d      # run as daemon. messages are written by syslog\n";
 	print STDERR "   eg,\n";
 	print STDERR "       tcpretrans         # trace TCP retransmits\n";
 	exit;
