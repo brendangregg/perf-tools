@@ -181,14 +181,6 @@ sub inet_h2a {
 	return join(".", @addr);
 }
 
-if ($daemon) {
-	Proc::Daemon::Init();
-	syslog('info', "start daemon mode\n");
-} else {
-	printf "%-8s %-6s %-20s -- %-20s %-12s\n", "TIME", "PID", "LADDR:LPORT",
-    "RADDR:RPORT", "STATE";
-}
-
 ### check permissions
 chdir "$tracing" or die "ERROR: accessing tracing. Root? Kernel has FTRACE?" .
     "\ndebugfs mounted? (mount -t debugfs debugfs /sys/kernel/debug)";
@@ -225,7 +217,13 @@ if ($tlp) {
 }
 map_tcp_states();
 
-
+if ($daemon) {
+	Proc::Daemon::Init();
+	syslog('info', "start daemon mode\n");
+} else {
+	printf "%-8s %-6s %-20s -- %-20s %-12s\n", "TIME", "PID", "LADDR:LPORT",
+    "RADDR:RPORT", "STATE";
+}
 
 #
 # Read and print event data. This loop waits one second then reads the buffered
@@ -234,7 +232,6 @@ map_tcp_states();
 # works because sockets that are retransmitting are usually long lived, and
 # remain in /proc/net/tcp for at least our sleep interval.
 #
-
 
 while (1) {
 	sleep $interval;
