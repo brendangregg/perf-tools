@@ -62,9 +62,12 @@ use strict;
 use warnings;
 use POSIX qw(strftime);
 use Getopt::Long;
+use Sys::Syslog;
+use Proc::Daemon;
 my $tracing = "/sys/kernel/debug/tracing";
 my $flock = "/var/tmp/.ftrace-lock";
 my $interval = 1;
+my $daemon = 0;
 local $SIG{INT} = \&cleanup;
 local $SIG{QUIT} = \&cleanup;
 local $SIG{TERM} = \&cleanup;
@@ -76,7 +79,9 @@ $| = 1;
 my ($help, $stacks, $tlp);
 GetOptions("help|h"   => \$help,
 	   "stacks|s" => \$stacks,
-	   "tlp|l" => \$tlp)
+	   "tlp|l" => \$tlp,
+	   "interval|i=f" => \$interval,
+	   "d" => \$daemon)
 or usage();
 usage() if $help;
 
@@ -174,6 +179,14 @@ sub inet_h2a {
 	return join(".", @addr);
 }
 
+if ($daemon) {
+	Proc::Daemon::Init();
+	syslog('info', "start daemon mode\n");
+} else {
+	printf "%-8s %-6s %-20s -- %-20s %-12s\n", "TIME", "PID", "LADDR:LPORT",
+    "RADDR:RPORT", "STATE";
+}
+
 ### check permissions
 chdir "$tracing" or die "ERROR: accessing tracing. Root? Kernel has FTRACE?" .
     "\ndebugfs mounted? (mount -t debugfs debugfs /sys/kernel/debug)";
@@ -209,8 +222,8 @@ if ($tlp) {
 	enable_kprobe $kname_tlp or edie "ERROR: enabling $kname_tlp probe.";
 }
 map_tcp_states();
-printf "%-8s %-6s %-20s -- %-20s %-12s\n", "TIME", "PID", "LADDR:LPORT",
-    "RADDR:RPORT", "STATE";
+
+
 
 #
 # Read and print event data. This loop waits one second then reads the buffered
@@ -219,6 +232,8 @@ printf "%-8s %-6s %-20s -- %-20s %-12s\n", "TIME", "PID", "LADDR:LPORT",
 # works because sockets that are retransmitting are usually long lived, and
 # remain in /proc/net/tcp for at least our sleep interval.
 #
+
+
 while (1) {
 	sleep $interval;
 
@@ -269,9 +284,16 @@ while (1) {
 		}
 
 		my $now = strftime "%H:%M:%S", localtime;
-		printf "%-8s %-6s %-20s %s> %-20s %-12s\n", $now, $pid,
+		my $message = sprintf ("%-8s %-6s %-20s %s> %-20s %-12s\n", $now, $pid,
 		    "$laddr:$lport", $rest =~ /$kname_tlp/ ? "L" : "R",
-		    "$raddr:$rport", $state,
+		    "$raddr:$rport", $state);
+
+		if ($daemon) {
+			syslog('err', $message);
+		} else {
+			print $message;
+		}		
+
 	}
 }
 
