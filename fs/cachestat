@@ -122,6 +122,9 @@ printf "%8s %8s %8s %8s %12s %10s" HITS MISSES DIRTIES RATIO "BUFFERS_MB" "CACHE
 (( opt_debug )) && printf "  DEBUG"
 echo
 
+### always unpause tracing
+echo 1 > tracing_enabled
+
 ### summarize
 quit=0; secs=0
 while (( !quit && (!opt_duration || secs < duration) )); do

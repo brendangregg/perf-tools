@@ -117,6 +117,8 @@ if ! echo 1 > function_profile_enabled; then
 	    "Have CONFIG_FUNCTION_PROFILER? Exiting."
 fi
 
+### always unpause tracing
+echo 1 > tracing_enabled
 ### summarize
 quit=0; secs=0
 while (( !quit && (!opt_duration || secs < duration) )); do
@@ -136,7 +138,7 @@ while (( !quit && (!opt_duration || secs < duration) )); do
 		for (k in a) {
 			printf "%-30s %8d\n", k,  a[k]
 		}
-	}' | sort -n -k2 | $tcmd
+	}' | sort -nr -k2 | $tcmd
 done
 
 ### end tracing
