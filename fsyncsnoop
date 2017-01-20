@@ -1,0 +1,305 @@
+#!/bin/bash
+#
+# fsyncsnoop - trace fsync() syscalls with file details.
+#             Written using Linux ftrace.
+#
+# This traces fsync() syscalls, showing the file name and returned value.
+#
+# This implementation is designed to work on older kernel versions, and without
+# kernel debuginfo. It works by dynamic tracing of the enter and return time of
+# fsync(), to calculate the fsync latency. It also tries to guess file path by
+# by using python readlink method against /proc/<pid>/fd/<fd>.
+# 
+# This approach is kernel version specific, and may not work on your version.
+# It is a workaround, and proof of concept for ftrace, until more kernel tracing
+# functionality is available.
+#
+# USAGE: ./fsyncsnoop [-htx] [-d secs] [-p pid] [-n name] [filename]
+#
+# Run "fsyncsnoop -h" for full usage.
+#
+# REQUIREMENTS: FTRACE CONFIG, syscalls:sys_enter/exit_ftrace tracepoints, awk,
+# python and /proc/<pid>/fd/<fd>
+#
+#
+# From perf-tools: https://github.com/brendangregg/perf-tools
+#
+# See the fsyncsnoop(8) man page (in perf-tools) for more info.
+#
+# COPYRIGHT: Copyright (c) 2014 Brendan Gregg.
+#
+#  This program is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU General Public License
+#  as published by the Free Software Foundation; either version 2
+#  of the License, or (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software Foundation,
+#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#
+#  (http://www.gnu.org/copyleft/gpl.html)
+#
+# 21-Jan-2015	Yong Yang	Created this (Repurposed Brendan's opensnoop)
+
+### default variables
+tracing=/sys/kernel/debug/tracing
+flock=/var/tmp/.ftrace-lock; wroteflock=0
+opt_duration=0; duration=; opt_name=0; name=; opt_pid=0; pid=; ftext=
+opt_time=0; time_ms=; opt_fail=0; opt_file=0; file=
+trap ':' INT QUIT TERM PIPE HUP	# sends execution to end tracing section
+
+function usage {
+	cat <<-END >&2
+	USAGE: fsyncsnoop [-htx] [-d secs] [-p PID] [-n name] [filename]
+	                 -d seconds      # trace duration, and use buffers
+	                 -n name         # process name to match on I/O issue
+	                 -p PID          # PID to match on I/O issue
+	                 -t time         # Show latency longer than time(ms)
+	                 -x              # only show failed fsync
+	                 -h              # this usage message
+	                 filename        # match filename (partials, REs, ok)
+	  eg,
+	       fsyncsnoop                 # watch fsync()s live (unbuffered)
+	       fsyncsnoop -d 1            # trace 1 sec (buffered)
+	       fsyncsnoop -p 181          # trace fsync issued by PID 181 only
+	       fsyncsnoop -t 30           # trace fsync latency longer than 30ms
+	       fsyncsnoop conf            # trace filenames containing "conf"
+	       fsyncsnoop 'log$'          # filenames ending in "log"
+
+	See the man page and example file for more info.
+END
+	exit
+}
+
+function warn {
+	if ! eval "$@"; then
+		echo >&2 "WARNING: command failed \"$@\""
+	fi
+}
+
+function end {
+	# disable tracing
+	echo 2>/dev/null
+	echo "Ending tracing..." 2>/dev/null
+	cd $tracing
+	warn "echo 0 > events/syscalls/sys_enter_fsync/enable"
+	warn "echo 0 > events/syscalls/sys_exit_fsync/enable"
+	if (( opt_pid )); then
+		warn "echo 0 > events/syscalls/sys_enter_fsync/filter"
+		warn "echo 0 > events/syscalls/sys_exit_fsync/filter"
+	fi
+	warn "echo > trace"
+	(( wroteflock )) && warn "rm $flock"
+}
+
+function die {
+	echo >&2 "$@"
+	exit 1
+}
+
+function edie {
+	# die with a quiet end()
+	echo >&2 "$@"
+	exec >/dev/null 2>&1
+	end
+	exit 1
+}
+
+### process options
+while getopts d:hn:p:t:x opt
+do
+	case $opt in
+	d)	opt_duration=1; duration=$OPTARG ;;
+	n)	opt_name=1; name=$OPTARG ;;
+	p)	opt_pid=1; pid=$OPTARG ;;
+	t)	opt_time=1; time_ms=$OPTARG ;;
+	x)	opt_fail=1 ;;
+	h|?)	usage ;;
+	esac
+done
+shift $(( $OPTIND - 1 ))
+if (( $# )); then
+	opt_file=1
+	file=$1
+	shift
+fi
+(( $# )) && usage
+
+### option logic
+(( opt_pid && opt_name )) && die "ERROR: use either -p or -n."
+(( opt_pid )) && ftext=" issued by PID $pid"
+(( opt_name )) && ftext=" issued by process name \"$name\""
+(( opt_time )) && ftext=" show latency longer than \"$time_ms\"ms"
+(( opt_file )) && ftext="$ftext for filenames containing \"$file\""
+if (( opt_duration )); then
+	echo "Tracing fsync()s$ftext for $duration seconds (buffered)..."
+else
+	echo "Tracing fsync()s$ftext. Ctrl-C to end."
+fi
+
+### select awk
+# workaround for mawk fflush()
+[[ -x /usr/bin/mawk ]] && awk="mawk" && \
+    mawk -W interactive && [ $? -eq 0 ] && awk="mawk -W interactive"
+# workaround for gawk strtonum()
+[[ -x /usr/bin/gawk ]] && awk="gawk --non-decimal-data"
+
+### select python
+[[ -x /usr/bin/python ]] && python="python -u -c"
+
+### check permissions
+cd $tracing || die "ERROR: accessing tracing. Root user? Kernel has FTRACE?
+    debugfs mounted? (mount -t debugfs debugfs /sys/kernel/debug)"
+
+### ftrace lock
+[[ -e $flock ]] && die "ERROR: ftrace may be in use by PID $(cat $flock) $flock"
+echo $$ > $flock || die "ERROR: unable to write $flock."
+wroteflock=1
+
+### setup and begin tracing
+echo nop > current_tracer
+if (( opt_pid )); then
+	if ! echo "common_pid==$pid" > events/syscalls/sys_enter_fsync/filter || \
+	   ! echo "common_pid==$pid" > events/syscalls/sys_exit_fsync/filter;
+	then
+	    edie "ERROR: setting -p $pid. Exiting."
+	fi
+fi
+if ! echo 1 > events/syscalls/sys_enter_fsync/enable; then
+	edie "ERROR: enabling fsync() enter tracepoint. Exiting."
+fi
+if ! echo 1 > events/syscalls/sys_exit_fsync/enable; then
+	edie "ERROR: enabling fsync() exit tracepoint. Exiting."
+fi
+printf "%-16.16s %-6s %6s %4s %s %s\n" "COMM" "PID" "LATms" "FD" "RVAL" "FILE"
+
+#
+# Determine output format. It may be one of the following (newest first):
+#           TASK-PID   CPU#  ||||    TIMESTAMP  FUNCTION
+#           TASK-PID    CPU#    TIMESTAMP  FUNCTION
+# To differentiate between them, the number of header fields is counted,
+# and an offset set, to skip the extra column when needed.
+#
+offset=$($awk 'BEGIN { o = 0; }
+	$1 == "#" && $2 ~ /TASK/ && NF == 6 { o = 1; }
+	$2 ~ /TASK/ { print o; exit }' trace)
+
+### print trace buffer
+warn "echo > trace"
+( if (( opt_duration )); then
+	# wait then dump buffer
+	sleep $duration
+	cat trace
+else
+	# print buffer live
+	cat trace_pipe
+fi ) | $python '#!/usr/bin/python
+import sys
+import os
+import re
+from sys import argv
+
+(script, offset, opt_name, name, opt_time, time_ms, opt_fail,
+    opt_file, file) = argv
+
+#initializations
+o = int(offset, 10)
+if (opt_time == "1"):
+    time_ms = float(time_ms)
+
+lastfd = {}
+lastname = {}
+lasttime = {}
+enter_flag = {}
+
+#free context
+def free_context():
+    del lastname[pid, fd]
+    del lasttime[pid, fd]
+    del enter_flag[pid, fd]
+    del lastfd[pid]
+
+#main loop
+while True:
+    try:
+        line = sys.stdin.readline()
+        if not line:
+            break
+
+        # common fields
+        if (line.find("#") != 0):
+            line = line.strip()
+            keyidx = line.find("-")
+            comm = line[0:keyidx]
+
+            if (opt_name == "1" and comm.find(name) < 0):
+                continue
+
+            subline = line[keyidx+1:len(line)]
+            fields = subline.split()
+            # Array indices start at 0 unlike AWK
+            pid = fields[0]
+
+
+        # sys_fsync() enter
+        if (line.find("sys_fsync(fd:") > 0):
+            fd = fields[4+o].replace(")", "")
+            fd = int(fd,16)
+            path = "/proc/%s/fd/%d"%(pid, fd)
+            # guess the filename. It may not be correct as fd could
+            # be closed and opened for another file.
+            try:
+                filename = os.readlink(path)
+            except OSError:
+                filename = "***the fd has closed[%s]"%path
+
+            # save context
+            lastfd[pid] = fd
+            lastname[pid, fd] = filename
+            lasttime[pid, fd] = float(fields[2+o].replace(":", ""))
+            enter_flag[pid, fd] = 1
+
+        # sys_fsync() exit
+        if (line.find("sys_fsync ->") > 0):
+            fd = lastfd[pid]
+            filename = lastname[pid, fd]
+            time_enter = lasttime[pid, fd]
+
+            if (opt_file == "1"):
+                match = re.match(r".*"+file+".*", filename)
+                if not match:
+                    free_context()
+                    continue
+
+            if enter_flag[pid, fd] == 1:
+                rval = fields[5+o]
+                time_exit = float(fields[2+o].replace(":", ""))
+                latency = (time_exit-time_enter)*1000
+                if (opt_time == "1" and latency < time_ms):
+                    free_context()
+                    continue
+                latency = "%.2f"%latency
+                print "%-16.16s %-6s %6s %4s %s %s"%(
+                    comm, pid, latency, fd, rval, filename)
+                free_context()
+            else:
+                print "WARNING: fsync exit without matched fsync enter"
+                print line
+
+        # LOST event
+        if re.match(r"LOST.*EVENTS", line):
+            print "WARNING: Detect LOST EVENTs"
+            print line
+
+    except KeyboardInterrupt:
+        break
+' "$offset" "$opt_name" "$name" "$opt_time" "$time_ms" "$opt_fail" \
+    "$opt_file" "$file"
+
+### end tracing
+end
