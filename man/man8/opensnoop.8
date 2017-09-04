@@ -3,7 +3,7 @@
 opensnoop \- trace open() syscalls with file details. Uses Linux ftrace.
 .SH SYNOPSIS
 .B opensnoop
-[\-htx] [\-d secs] [\-p pid] [\-n name] [filename]
+[\-htx] [\-d secs] [\-p pid] [\-L tid] [\-n name] [filename]
 .SH DESCRIPTION
 This traces open() syscalls, showing the file name (pathname) and returned file
 descriptor number (or \-1, for error).
@@ -40,6 +40,9 @@ expressions are allowed. This is post-filtered using awk.
 .TP
 \-p PID
 Only trace this process ID. This is filtered in-kernel.
+.TP
+\-L TID
+Only trace this thread ID. This is filtered in-kernel.
 .TP
 \-t
 Include timestamps, in seconds.
