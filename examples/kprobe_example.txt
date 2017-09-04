@@ -346,10 +346,11 @@ This makes use of the kernel options/stacktrace feature.
 Use -h to print the USAGE message:
 
 # ./kprobe -h
-USAGE: kprobe [-FhHsv] [-d secs] [-p PID] kprobe_definition [filter]
+USAGE: kprobe [-FhHsv] [-d secs] [-p PID] [-L TID] kprobe_definition [filter]
                  -F              # force. trace despite warnings.
                  -d seconds      # trace duration, and use buffers
-                 -p PID          # PID to match on I/O issue
+                 -p PID          # PID to match on events
+                 -L TID          # thread id to match on events
                  -v              # view format file (don't trace)
                  -H              # include column headers
                  -s              # show kernel stack traces

@@ -3,7 +3,7 @@
 kprobe \- trace a given kprobe definition. Kernel dynamic tracing. Uses Linux ftrace.
 .SH SYNOPSIS
 .B kprobe
-[\-FhHsv] [\-d secs] [\-p PID] kprobe_definition [filter]
+[\-FhHsv] [\-d secs] [\-p PID] [\-L TID] kprobe_definition [filter]
 .SH DESCRIPTION
 This will create, trace, then destroy a given kprobe definition. See
 Documentation/trace/kprobetrace.txt in the Linux kernel source for the
@@ -59,6 +59,9 @@ for use in a custom filter.
 .TP
 \-p PID
 Only trace kernel functions when this process ID is on-CPU.
+.TP
+\-L TID
+Only trace kernel functions when this thread ID is on-CPU.
 .TP
 kprobe_definition
 A full kprobe definition, as documented by Documentation/trace/kprobetrace.txt
