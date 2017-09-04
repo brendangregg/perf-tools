@@ -2155,7 +2155,7 @@ performance investigation.
 Use -h to print the USAGE message:
 
 # ./funcgraph -h
-USAGE: funcgraph [-aCDhHPtT] [-m maxdepth] [-p PID] [-d secs] funcstring
+USAGE: funcgraph [-aCDhHPtT] [-m maxdepth] [-p PID] [-L TID] [-d secs] funcstring
                  -a              # all info (same as -HPt)
                  -C              # measure on-CPU time only
                  -d seconds      # trace duration, and use buffers
@@ -2164,6 +2164,7 @@ USAGE: funcgraph [-aCDhHPtT] [-m maxdepth] [-p PID] [-d secs] funcstring
                  -H              # include column headers
                  -m maxdepth     # max stack depth to show
                  -p PID          # trace when this pid is on-CPU
+                 -L TID          # trace when this thread is on-CPU
                  -P              # show process names & PIDs
                  -t              # show timestamps
                  -T              # comment function tails
