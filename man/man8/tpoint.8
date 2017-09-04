@@ -3,7 +3,7 @@
 tpoint \- trace a given tracepoint. Static tracing. Uses Linux ftrace.
 .SH SYNOPSIS
 .B tpoint
-[\-hHsv] [\-d secs] [\-p PID] tracepoint [filter]
+[\-hHsv] [\-d secs] [\-p PID] [\-L TID] tracepoint [filter]
 
 .B tpoint
 \-l
@@ -52,6 +52,9 @@ for use in a custom filter.
 .TP
 \-p PID
 Only trace kernel functions when this process ID is on-CPU.
+.TP
+\-L TID
+Only trace kernel functions when this thread ID is on-CPU.
 .TP
 tracepoint
 A tracepoint name. Eg, block:block_rq_issue. See the EXAMPLES section.

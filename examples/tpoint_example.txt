@@ -184,10 +184,11 @@ making it a read:
 Use -h to print the USAGE message:
 
 # ./tpoint -h
-USAGE: tpoint [-hHsv] [-d secs] [-p PID] tracepoint [filter]
+USAGE: tpoint [-hHsv] [-d secs] [-p PID] [-L TID] tracepoint [filter]
        tpoint -l
                  -d seconds      # trace duration, and use buffers
-                 -p PID          # PID to match on I/O issue
+                 -p PID          # PID to match on events
+                 -L TID          # thread id to match on events
                  -v              # view format file (don't trace)
                  -H              # include column headers
                  -l              # list all tracepoints
