@@ -9,7 +9,7 @@
 # using other, lower overhead tools. This is a proof of concept using Linux
 # ftrace capabilities on older kernels.
 #
-# USAGE: funcgraph [-aCDhHPtT] [-m maxdepth] [-p PID] [-d secs] funcstring
+# USAGE: funcgraph [-aCDhHPtT] [-m maxdepth] [-p PID] [-L TID] [-d secs] funcstring
 #
 # Run "funcgraph -h" for full usage.
 #
@@ -68,14 +68,14 @@
 ### default variables
 tracing=/sys/kernel/debug/tracing
 flock=/var/tmp/.ftrace-lock
-opt_duration=0; duration=; opt_pid=0; pid=; pidtext=; opt_headers=0
-opt_proc=0; opt_time=0; opt_tail=0; opt_nodur=0; opt_cpu=0
+opt_duration=0; duration=; opt_pid=0; pid=; opt_tid=0; tid=; pidtext=
+opt_headers=0; opt_proc=0; opt_time=0; opt_tail=0; opt_nodur=0; opt_cpu=0
 opt_max=0; max=0
 trap ':' INT QUIT TERM PIPE HUP	# sends execution to end tracing section
 
 function usage {
 	cat <<-END >&2
-	USAGE: funcgraph [-aCDhHPtT] [-m maxdepth] [-p PID] [-d secs] funcstring
+	USAGE: funcgraph [-aCDhHPtT] [-m maxdepth] [-p PID] [-L TID] [-d secs] funcstring
 	                 -a              # all info (same as -HPt)
 	                 -C              # measure on-CPU time only
 	                 -d seconds      # trace duration, and use buffers
@@ -84,6 +84,7 @@ function usage {
 	                 -H              # include column headers
 	                 -m maxdepth     # max stack depth to show
 	                 -p PID          # trace when this pid is on-CPU
+	                 -L TID          # trace when this thread is on-CPU
 	                 -P              # show process names & PIDs
 	                 -t              # show timestamps
 	                 -T              # comment function tails
@@ -118,7 +119,7 @@ function end {
 	(( opt_cpu )) && warn "echo sleep-time > trace_options"
 
 	warn "echo nop > current_tracer"
-	(( opt_pid )) && warn "echo > set_ftrace_pid"
+	(( opt_pid || opt_tid )) && warn "echo > set_ftrace_pid"
 	(( opt_max )) && warn "echo 0 > max_graph_depth"
 	warn "echo > set_graph_function"
 	warn "echo > trace"
@@ -140,7 +141,7 @@ function edie {
 }
 
 ### process options
-while getopts aCd:DhHm:p:PtT opt
+while getopts aCd:DhHm:p:L:PtT opt
 do
 	case $opt in
 	a)	opt_headers=1; opt_proc=1; opt_time=1 ;;
@@ -149,6 +150,7 @@ do
 	D)	opt_nodur=1; ;;
 	m)	opt_max=1; max=$OPTARG ;;
 	p)	opt_pid=1; pid=$OPTARG ;;
+	L)	opt_tid=1; tid=$OPTARG ;;
 	H)	opt_headers=1; ;;
 	P)	opt_proc=1; ;;
 	t)	opt_time=1; ;;
@@ -160,8 +162,10 @@ shift $(( $OPTIND - 1 ))
 
 ### option logic
 (( $# == 0 )) && usage
+(( opt_pid && opt_tid )) && edie "ERROR: You can use -p or -L but not both."
 funcs="$1"
 (( opt_pid )) && pidtext=" for PID $pid"
+(( opt_tid )) && pidtext=" for TID $tid"
 if (( opt_duration )); then
 	echo "Tracing \"$funcs\"$pidtext for $duration seconds..."
 else
@@ -187,9 +191,18 @@ if (( opt_max )); then
 	fi
 fi
 if (( opt_pid )); then
-	if ! echo $pid > set_ftrace_pid; then
-		edie "ERROR: setting -p $pid (PID exist?). Exiting."
-	fi
+    echo > set_ftrace_pid
+    # ftrace expects kernel pids, which are thread ids
+    for tid in /proc/$pid/task/*; do
+        if ! echo ${tid##*/} >> set_ftrace_pid; then
+            edie "ERROR: setting -p $pid (PID exist?). Exiting."
+        fi
+    done
+fi
+if (( opt_tid )); then
+    if ! echo $tid > set_ftrace_pid; then
+        edie "ERROR: setting -L $tid (TID exist?). Exiting."
+    fi
 fi
 if ! echo > set_ftrace_filter; then
 	edie "ERROR: writing to set_ftrace_filter. Exiting."
