@@ -3,7 +3,7 @@
 uprobe \- trace a given uprobe definition. User-level dynamic tracing. Uses Linux ftrace. EXPERIMENTAL.
 .SH SYNOPSIS
 .B uprobe
-[\-FhHsv] [\-d secs] [\-p PID] {\-l target | uprobe_definition [filter]}
+[\-FhHsv] [\-d secs] [\-p PID] [\-L TID] {\-l target | uprobe_definition [filter]}
 .SH DESCRIPTION
 This will create, trace, then destroy a given uprobe definition. See
 Documentation/trace/uprobetracer.txt in the Linux kernel source for the
@@ -69,6 +69,9 @@ for use in a custom filter.
 .TP
 \-p PID
 Only trace user-level functions when this process ID is on-CPU.
+.TP
+\-L TID
+Only trace user-level functions when this thread ID is on-CPU.
 .TP
 uprobe_definition
 A full uprobe definition, as documented by Documentation/trace/uprobetracer.txt

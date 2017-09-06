@@ -8,7 +8,7 @@
 # printing live tracepoint events only. Wildcards are currently not supported.
 # If this is insufficient for any reason, use the perf command instead.
 #
-# USAGE: ./tpoint [-hHsv] [-d secs] [-p pid] tracepoint [filter]
+# USAGE: ./tpoint [-hHsv] [-d secs] [-p pid] [-L tid] tracepoint [filter]
 #        ./tpoint -l
 #
 # Run "tpoint -h" for full usage.
@@ -53,16 +53,17 @@
 ### default variables
 tracing=/sys/kernel/debug/tracing
 flock=/var/tmp/.ftrace-lock; wroteflock=0
-opt_duration=0; duration=; opt_pid=0; pid=; opt_filter=0; filter=
-opt_view=0; opt_headers=0; opt_stack=0; dmesg=2
+opt_duration=0; duration=; opt_pid=0; pid=; opt_tid=0; tid=
+opt_filter=0; filter=; opt_view=0; opt_headers=0; opt_stack=0; dmesg=2
 trap ':' INT QUIT TERM PIPE HUP	# sends execution to end tracing section
 
 function usage {
 	cat <<-END >&2
-	USAGE: tpoint [-hHsv] [-d secs] [-p PID] tracepoint [filter]
+	USAGE: tpoint [-hHsv] [-d secs] [-p PID] [-L TID] tracepoint [filter]
 	       tpoint -l
 	                 -d seconds      # trace duration, and use buffers
-	                 -p PID          # PID to match on I/O issue
+	                 -p PID          # PID to match on event
+	                 -L TID          # thread id to match on event
 	                 -v              # view format file (don't trace)
 	                 -H              # include column headers
 	                 -l              # list all tracepoints
@@ -117,11 +118,12 @@ function edie {
 }
 
 ### process options
-while getopts d:hHlp:sv opt
+while getopts d:hHlp:L:sv opt
 do
 	case $opt in
 	d)	opt_duration=1; duration=$OPTARG ;;
 	p)	opt_pid=1; pid=$OPTARG ;;
+	L)	opt_tid=1; tid=$OPTARG ;;
 	H)	opt_headers=1 ;;
 	l)	opt_list=1 ;;
 	s)	opt_stack=1 ;;
@@ -141,12 +143,21 @@ if (( !opt_list )); then
 fi
 
 ### option logic
-(( opt_pid && opt_filter )) && die "ERROR: use either -p or -f."
+(( opt_pid + opt_filter + opt_tid > 1 )) && \
+	die "ERROR: use at most one of -p, -L, or filter."
 (( opt_duration && opt_view )) && die "ERROR: use either -d or -v."
 if (( opt_pid )); then
 	# convert to filter
 	opt_filter=1
-	filter="common_pid == $pid"
+	# ftrace common_pid is thread id from user's perspective
+	for tid in /proc/$pid/task/*; do
+		filter="$filter || common_pid == ${tid##*/}"
+	done
+	filter=${filter:3}  # trim leading ' || ' (four characters)
+fi
+if (( opt_tid )); then
+	opt_filter=1
+	filter="common_pid == $tid"
 fi
 if (( !opt_view && !opt_list )); then
 	if (( opt_duration )); then
