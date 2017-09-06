@@ -63,17 +63,18 @@ trap ':' INT QUIT TERM PIPE HUP	# sends execution to end tracing section
 function usage {
 	cat <<-END >&2
 	USAGE: execsnoop [-hrt] [-a argc] [-d secs] [name]
-	                 -d seconds      # trace duration, and use buffers
-	                 -a argc         # max args to show (default 8)
-	                 -r              # include re-execs
-	                 -t              # include time (seconds)
-	                 -h              # this usage message
-	                 name            # process name to match (REs allowed)
-	  eg,
-	       execsnoop                 # watch exec()s live (unbuffered)
-	       execsnoop -d 1            # trace 1 sec (buffered)
-	       execsnoop grep            # trace process names containing grep
-	       execsnoop 'log$'          # filenames ending in "log"
+		-d seconds      # trace duration, and use buffers
+		-a argc         # max args to show
+				# (default $argc, max $max_argc)
+		-r              # include re-execs
+		-t              # include time (seconds)
+		-h              # this usage message
+		name            # process name to match (REs allowed)
+	eg,
+		execsnoop                 # watch exec()s live (unbuffered)
+		execsnoop -d 1            # trace 1 sec (buffered)
+		execsnoop grep            # trace process names containing grep
+		execsnoop 'log$'          # filenames ending in "log"
 
 	See the man page and example file for more info.
 END
