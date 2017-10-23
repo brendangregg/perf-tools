@@ -241,12 +241,18 @@ END
 	exit
 fi
 
-### check command dependencies
+### check command/utility dependencies
+needinstall=0
 for cmd in file objdump ldconfig awk; do
-	which $cmd > /dev/null
-	(( $? != 0 )) && die "ERROR: missing $cmd in \$PATH. $0 needs" \
-	    "to use this command. Exiting."
+    which $cmd > /dev/null 2>&1 || {
+        [ ${needinstall} -eq 0 ] && echo "[!] $0: missing utilit[y|ies]:"
+        echo " ${cmd}"
+        needinstall=1
+        continue
+   }
 done
+[ ${needinstall} -eq 1 ] && die "ERROR: missing one or more utils (see above) in \$PATH. $0 needs" \
+    "to use these command(s). Pl install and retry, exiting."
 
 ### option logic
 [[ "$uprobe" == "" ]] && usage
