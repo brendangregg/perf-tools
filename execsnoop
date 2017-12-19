@@ -73,7 +73,7 @@ function usage {
 	       execsnoop                 # watch exec()s live (unbuffered)
 	       execsnoop -d 1            # trace 1 sec (buffered)
 	       execsnoop grep            # trace process names containing grep
-	       execsnoop 'log$'          # filenames ending in "log"
+	       execsnoop 'udevd$'        # process names ending in "udevd"
 
 	See the man page and example file for more info.
 END
