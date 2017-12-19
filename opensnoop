@@ -238,10 +238,8 @@ fi ) | $awk -v o=$offset -v opt_name=$opt_name -v name=$name \
 		#
 		# eg: ... (do_sys_open+0xc3/0x220 <- getname) arg1="file1"
 		#
-		filename = $NF
-		sub(/"$/, "", filename)
-		sub(/.*"/, "", filename)
-		lastfile[pid] = filename
+		match($0, /arg1=\"(.+)\"/, m)
+		lastfile[pid] = m[1]
 	}
 
 	# sys_open()
