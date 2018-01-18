@@ -78,6 +78,8 @@ function usage {
 	USAGE: funcgraph [-aCDhHPtT] [-m maxdepth] [-p PID] [-L TID] [-d secs] funcstring
 	                 -a              # all info (same as -HPt)
 	                 -C              # measure on-CPU time only
+	                 -I              # do not trace functions that happen inside interrupt
+	                 -F              # only record function whenever the duration is greater than given (in µs)
 	                 -d seconds      # trace duration, and use buffers
 	                 -D              # do not show function duration
 	                 -h              # this usage message
@@ -117,6 +119,8 @@ function end {
 	(( opt_tail )) && warn "echo nofuncgraph-tail > trace_options"
 	(( opt_nodur )) && warn "echo funcgraph-duration > trace_options"
 	(( opt_cpu )) && warn "echo sleep-time > trace_options"
+	(( opt_irqs )) && warn "echo funcgraph-irqs > trace_options"
+	(( opt_func_duration )) && warn "echo 0 > tracing_thresh"
 
 	warn "echo nop > current_tracer"
 	(( opt_pid || opt_tid )) && warn "echo > set_ftrace_pid"
@@ -141,11 +145,13 @@ function edie {
 }
 
 ### process options
-while getopts aCd:DhHm:p:L:PtT opt
+while getopts aCIF:d:DhHm:p:L:PtT opt
 do
 	case $opt in
 	a)	opt_headers=1; opt_proc=1; opt_time=1 ;;
 	C)	opt_cpu=1; ;;
+	I)	opt_irqs=1; ;;
+	F)	opt_func_duration=1; func_duration=$OPTARG ;;
 	d)	opt_duration=1; duration=$OPTARG ;;
 	D)	opt_nodur=1; ;;
 	m)	opt_max=1; max=$OPTARG ;;
@@ -216,6 +222,16 @@ fi
 if (( opt_cpu )); then
 	if ! echo nosleep-time > trace_options; then
 		edie "ERROR: setting -C (nosleep-time). Exiting."
+	fi
+fi
+if (( opt_irqs )); then
+	if ! echo nofuncgraph-irqs > trace_options; then
+		edie "ERROR: setting -I (nofuncgraph-irqs). Old kernel? Exiting."
+	fi
+fi
+if (( opt_func_duration )); then
+	if ! echo $func_duration > tracing_thresh; then
+		edie "ERROR: setting -F (tracing_thresh). Old kernel? Exiting."
 	fi
 fi
 # the following must be done after setting current_tracer
