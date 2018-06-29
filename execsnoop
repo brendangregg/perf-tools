@@ -195,7 +195,7 @@ if ! echo $kprobe >> kprobe_events 2>/dev/null; then
 	    makeprobe do_execve
 	    if ! echo $kprobe >> kprobe_events 2>/dev/null; then
 		    edie "ERROR: adding a kprobe for execve. Exiting."
-        fi
+           fi
 	fi
 fi
 if ! echo 1 > events/kprobes/$kname/enable; then
