@@ -91,6 +91,7 @@ function end {
 	echo 2>/dev/null
 	echo "Ending tracing..." 2>/dev/null
 	cd $tracing
+	warn "echo 0 > tracing_on"
 	warn "echo 0 > events/kprobes/$kname/enable"
 	warn "echo 0 > events/sched/sched_process_fork/enable"
 	warn "echo -:$kname >> kprobe_events"
@@ -197,6 +198,9 @@ if ! echo $kprobe >> kprobe_events 2>/dev/null; then
 		    edie "ERROR: adding a kprobe for execve. Exiting."
         fi
 	fi
+fi
+if ! echo 1 > tracing_on; then
+	edie "ERROR: enabling tracing. Exiting."
 fi
 if ! echo 1 > events/kprobes/$kname/enable; then
 	edie "ERROR: enabling kprobe for execve. Exiting."
