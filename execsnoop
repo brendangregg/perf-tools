@@ -54,7 +54,11 @@
 # 07-Jul-2014	Brendan Gregg	Created this.
 
 ### default variables
-tracing=/sys/kernel/debug/tracing
+mkdir -p /sys/kernel/debug/tracing/instances/execsnoop
+echo context-info > /sys/kernel/debug/tracing/instances/execsnoop/trace_options
+tracing=/sys/kernel/debug/tracing/instances/execsnoop
+kprobe_events=/sys/kernel/debug/tracing/kprobe_events
+current_tracer=/sys/kernel/debug/tracing/current_tracer
 flock=/var/tmp/.ftrace-lock; wroteflock=0
 opt_duration=0; duration=; opt_name=0; name=; opt_time=0; opt_reexec=0
 opt_argc=0; argc=8; max_argc=16; ftext=
@@ -93,7 +97,7 @@ function end {
 	cd $tracing
 	warn "echo 0 > events/kprobes/$kname/enable"
 	warn "echo 0 > events/sched/sched_process_fork/enable"
-	warn "echo -:$kname >> kprobe_events"
+	warn "echo -:$kname >> $kprobe_events"
 	warn "echo > trace"
 	(( wroteflock )) && warn "rm $flock"
 }
@@ -188,12 +192,12 @@ function makeprobe {
 makeprobe sys_execve
 
 ### setup and begin tracing
-echo nop > current_tracer
-if ! echo $kprobe >> kprobe_events 2>/dev/null; then
+echo nop > $current_tracer
+if ! echo $kprobe >> $kprobe_events 2>/dev/null; then
 	makeprobe stub_execve
-	if ! echo $kprobe >> kprobe_events 2>/dev/null; then
+	if ! echo $kprobe >> $kprobe_events 2>/dev/null; then
 	    makeprobe do_execve
-	    if ! echo $kprobe >> kprobe_events 2>/dev/null; then
+	    if ! echo $kprobe >> $kprobe_events 2>/dev/null; then
 		    edie "ERROR: adding a kprobe for execve. Exiting."
         fi
 	fi

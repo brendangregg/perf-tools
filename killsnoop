@@ -48,7 +48,10 @@
 # 13-Sep-2014   Martin Probst   Created this.
 
 ### default variables
-tracing=/sys/kernel/debug/tracing
+mkdir -p /sys/kernel/debug/tracing/instances/execsnoop
+echo context-info > /sys/kernel/debug/tracing/instances/execsnoop/trace_options
+tracing=/sys/kernel/debug/tracing/instances/execsnoop
+current_tracer=/sys/kernel/debug/tracing/current_tracer
 flock=/var/tmp/.ftrace-lock; wroteflock=0
 opt_duration=0; duration=; opt_name=0; name=; opt_pid=0; pid=; ftext=
 opt_time=0; opt_fail=0; opt_file=0; file=
@@ -147,7 +150,7 @@ echo $$ > $flock || die "ERROR: unable to write $flock."
 wroteflock=1
 
 ### setup and begin tracing
-echo nop > current_tracer
+echo nop > $current_tracer
 if ! echo 1 > $kevent_entry/enable; then
     edie "ERROR: enabling kill() entry tracepoint Exiting."
 fi

@@ -40,7 +40,10 @@
 # 20-Jul-2014	Brendan Gregg	Created this.
 
 ### default variables
-tracing=/sys/kernel/debug/tracing
+mkdir -p /sys/kernel/debug/tracing/instances/execsnoop
+echo context-info > /sys/kernel/debug/tracing/instances/execsnoop/trace_options
+tracing=/sys/kernel/debug/tracing/instances/execsnoop
+current_tracer=/sys/kernel/debug/tracing/current_tracer
 flock=/var/tmp/.ftrace-lock
 bufsize_kb=4096
 opt_device=0; device=; opt_iotype=0; iotype=; opt_timestamp=0
@@ -148,7 +151,7 @@ echo $$ > $flock || die "ERROR: unable to write $flock."
 wroteflock=1
 
 ### setup and begin tracing
-warn "echo nop > current_tracer"
+warn "echo nop > $current_tracer"
 warn "echo $bufsize_kb > buffer_size_kb"
 filter=
 if (( opt_iotype )); then
