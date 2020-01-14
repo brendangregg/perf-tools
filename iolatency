@@ -86,6 +86,10 @@ function end {
 		warn "echo 0 > events/block/$b_start/filter"
 		warn "echo 0 > events/block/block_rq_complete/filter"
 	fi
+	warn "echo 0 > tracing_on"
+	if [[ -x tracing_enabled ]];then
+		warn echo 0 > tracing_enabled
+	fi
 	warn "echo > trace"
 	(( wroteflock )) && warn "rm $flock"
 }
@@ -168,6 +172,16 @@ fi
 if ! echo 1 > events/block/$b_start/enable || \
     ! echo 1 > events/block/block_rq_complete/enable; then
 	edie "ERROR: enabling block I/O tracepoints. Exiting."
+fi
+if echo 1 > tracing_on; then
+	if [[ -x tracing_enabled ]];then
+		if ! echo 1 > tracing_enabled;then
+			edie "ERROR: enabling tracing_enabled. Exiting."
+		fi
+	fi
+else
+	edie "ERROR: enabling tracing_on. Exiting."
+
 fi
 etext=
 (( !opt_count )) && etext=" Ctrl-C to end."
