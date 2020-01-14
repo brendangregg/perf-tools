@@ -252,6 +252,8 @@ fi ) | $awk -v o=$offset -v opt_name=$opt_name -v name=$name \
 	# sys_open() / sys_openat()
 	$1 != "#" && ($(4+o) == "sys_open" || $(4+o) == "sys_openat") {
 		filename = lastfile[pid]
+		if (!filename)
+			next
 		delete lastfile[pid]
 		if (opt_file && filename !~ file)
 			next
@@ -269,7 +271,9 @@ fi ) | $awk -v o=$offset -v opt_name=$opt_name -v name=$name \
 		printf "%-16.16s %-6s %4s %s\n", comm, pid, rval, filename
 	}
 
-	$0 ~ /LOST.*EVENTS/ { print "WARNING: " $0 > "/dev/stderr" }
+	$0 ~ /LOST.*EVENTS/ {
+		delete lastfile
+		print "WARNING: " $0 > "/dev/stderr" }
 '
 
 ### end tracing
