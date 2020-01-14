@@ -88,9 +88,11 @@ function end {
 	cd $tracing
 	warn "echo 0 > events/kprobes/getnameprobe/enable"
 	warn "echo 0 > events/syscalls/sys_exit_open/enable"
+	warn "echo 0 > events/syscalls/sys_exit_openat/enable"
 	if (( opt_pid || opt_tid )); then
 		warn "echo 0 > events/kprobes/getnameprobe/filter"
 		warn "echo 0 > events/syscalls/sys_exit_open/filter"
+		warn "echo 0 > events/syscalls/sys_exit_openat/filter"
 	fi
 	warn "echo -:getnameprobe >> kprobe_events"
 	warn "echo > trace"
@@ -177,14 +179,16 @@ if (( opt_pid )); then
 	done
 	filter=${filter:3}  # trim leading ' || ' (four characters)
 	if ! echo $filter > events/kprobes/getnameprobe/filter || \
-	    ! echo $filter > events/syscalls/sys_exit_open/filter
+	    ! echo $filter > events/syscalls/sys_exit_open/filter || \
+	    ! echo $filter > events/syscalls/sys_exit_openat/filter
 	then
 	    edie "ERROR: setting -p $pid. Exiting."
 	fi
 fi
 if (( opt_tid )); then
 	if ! echo "common_pid == $tid" > events/kprobes/getnameprobe/filter || \
-	    ! echo "common_pid == $tid" > events/syscalls/sys_exit_open/filter
+	    ! echo "common_pid == $tid" > events/syscalls/sys_exit_open/filter || \
+	    ! echo "common_pid == $tid" > events/syscalls/sys_exit_openat/filter
 	then
 	    edie "ERROR: setting -L $tid. Exiting."
 	fi
@@ -194,6 +198,9 @@ if ! echo 1 > events/kprobes/getnameprobe/enable; then
 fi
 if ! echo 1 > events/syscalls/sys_exit_open/enable; then
 	edie "ERROR: enabling open() exit tracepoint. Exiting."
+fi
+if ! echo 1 > events/syscalls/sys_exit_openat/enable; then
+	edie "ERROR: enabling openat() exit tracepoint. Exiting."
 fi
 (( opt_time )) && printf "%-16s " "TIMEs"
 printf "%-16.16s %-6s %4s %s\n" "COMM" "PID" "FD" "FILE"
@@ -242,8 +249,8 @@ fi ) | $awk -v o=$offset -v opt_name=$opt_name -v name=$name \
 		lastfile[pid] = m[1]
 	}
 
-	# sys_open()
-	$1 != "#" && $(4+o) == "sys_open" {
+	# sys_open() / sys_openat()
+	$1 != "#" && ($(4+o) == "sys_open" || $(4+o) == "sys_openat") {
 		filename = lastfile[pid]
 		delete lastfile[pid]
 		if (opt_file && filename !~ file)
