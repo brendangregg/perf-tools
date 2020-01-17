@@ -144,7 +144,7 @@ if (( opt_count && opt_verbose )); then
 		tp=$(perf list syscalls:sys_enter_* | awk '
 		    $1 != "syscalls:sys_enter_write" &&  $1 ~ /syscalls:/ { printf "-e %s ", $1 }')
 		tp="$tp -e syscalls:sys_enter_write"
-		sh -c "perf record $tp --filter 'common_pid != '\$\$ $cpus $cmd"
+		sh -c "exec perf record $tp --filter 'common_pid != '\$\$ $cpus $cmd"
 	else
 		perf record 'syscalls:sys_enter_*' $cpus $cmd
 		# could also pipe direct to perf script
@@ -167,7 +167,7 @@ fi
 ### execute process name mode
 tp="-e raw_syscalls:sys_enter"
 if (( write_workaround )); then
-	sh -c "perf record $tp --filter 'common_pid != '\$\$ $cpus $cmd"
+	sh -c "exec perf record $tp --filter 'common_pid != '\$\$ $cpus $cmd"
 else
 	perf record $tp $cpus $cmd
 fi
