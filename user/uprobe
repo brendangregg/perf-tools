@@ -157,6 +157,30 @@ function set_path {
 		fi
 	fi
 
+        # In some systems, ldconfig can return more than one library from a 
+        # given $name. Here I count them:
+        nr_libraries_in_path=$(echo $path | wc -w)
+
+        # User will be able to chose the library he wants to use.
+        # If no library is chosen, the program quits, which is the
+        # same behavior as before this patch. 
+        if [[ $nr_libraries_in_path -gt "1" ]]
+        then
+          echo "More than 1 library found. Select the library you want to use."
+          for ((i = $nr_libraries_in_path ; i > 0 ; i-- ))
+          do
+            library=$(echo $path | cut -f $i -d " ")
+            echo -n $library " use this library? [y/N]: "
+            read answer
+            if [[ $answer == "y" ]]
+            then 
+              path=$library
+              break
+            fi
+          done
+        fi
+        
+        # test if $path is executable
 	if [[ ! -x $path ]]; then
 		die "ERROR: resolved \"$name\" to \"$path\", but file missing"
 	fi
