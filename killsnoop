@@ -231,6 +231,9 @@ fi ) | $awk -v o=$offset -v opt_name=$opt_name -v name=$name \
     # sys_kill exit
     $1 != "#" && $(5+o) ~ /->/ {
         rv = int($NF)
+        # 0: suceess; -1: error
+        if (rv != 0)
+            rv = -1
         killed_pid = current[pid,"kpid"]
         signal = current[pid,"signal"]
 
@@ -252,7 +255,7 @@ fi ) | $awk -v o=$offset -v opt_name=$opt_name -v name=$name \
             }
         }
 
-        printf "%-16.16s %-6s %-8s %-10s %-4s\n", comm, pid, killed_pid, signal,
+        printf "%-16.16s %-6s %-8s %-10s %-4d\n", comm, pid, killed_pid, signal,
             rv
     }
 
