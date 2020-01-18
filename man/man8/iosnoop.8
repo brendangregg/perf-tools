@@ -3,7 +3,7 @@
 iosnoop \- trace block I/O events as they occur. Uses Linux ftrace.
 .SH SYNOPSIS
 .B iosnoop
-[\-hQst] [\-d device] [\-i iotype] [\-p pid] [\-n name] [duration]
+[\-BhQst] [\-d device] [\-i iotype] [\-p pid] [\-n name] [duration]
 .SH DESCRIPTION
 iosnoop prints block device I/O events as they happen, with useful details such
 as PID, device, I/O type, block number, I/O size, and latency.
@@ -20,9 +20,14 @@ section in OPTIONS.
 Since this uses ftrace, only the root user can use this tool.
 .SH REQUIREMENTS
 FTRACE CONFIG, and the tracepoints block:block_rq_insert, block:block_rq_issue,
-and block:block_rq_complete, which you may already have enabled and available on
-recent Linux kernels. And awk.
+block:block_rq_complete, block:block_bio_queue, and block:block_bio_complete
+which you may already have enabled and available on recent Linux kernels. And awk.
 .SH OPTIONS
+.TP
+\-B
+Trache block:block_bio_queue and block:block_bio_completete, not block_rq_*.
+This is useful for tracing events such as ext4lazyinit. This option is mutually
+exclusive with -Q.
 .TP
 \-d device
 Only show I/O issued by this device. (eg, "202,1"). This matches the DEV
