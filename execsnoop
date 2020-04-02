@@ -165,6 +165,9 @@ cd $tracing || die "ERROR: accessing tracing. Root user? Kernel has FTRACE?
 echo $$ > $flock || die "ERROR: unable to write $flock."
 wroteflock=1
 
+### cleanup error log
+echo > error_log
+
 ### build probe
 if [[ -x /usr/bin/getconf ]]; then
 	bits=$(getconf LONG_BIT)
@@ -204,6 +207,12 @@ fi
 if ! echo 1 > events/sched/sched_process_fork/enable; then
 	edie "ERROR: enabling sched:sched_process_fork tracepoint. Exiting."
 fi
+if grep -q . error_log; then
+	echo >&2 "ERROR: something went wrong. Error log has records:"
+	cat error_log
+	edie
+fi
+
 echo "Instrumenting $func"
 (( opt_time )) && printf "%-16s " "TIMEs"
 printf "%6s %6s %s\n" "PID" "PPID" "ARGS"
