@@ -186,6 +186,9 @@ cd $tracing || die "ERROR: accessing tracing. Root user? Kernel has FTRACE?
 
 [[ -d instances ]] && use_instances
 
+# for comparison with dmesg we use global clock
+warn "echo global > trace_clock"
+
 ### ftrace lock
 [[ -e $flock ]] && die "ERROR: ftrace may be in use by PID $(cat $flock) $flock"
 echo $$ > $flock || die "ERROR: unable to write $flock."
