@@ -189,9 +189,10 @@ cd $tracing || die "ERROR: accessing tracing. Root user? Kernel has FTRACE?
 ### ftrace lock
 [[ -e $flock ]] && die "ERROR: ftrace may be in use by PID $(cat $flock) $flock"
 echo $$ > $flock || die "ERROR: unable to write $flock."
+wroteflock=1
 
 ### setup and begin tracing
-echo nop > current_tracer
+warn "echo nop > current_tracer"
 warn "echo $bufsize_kb > buffer_size_kb"
 filter=
 if (( opt_iotype )); then
