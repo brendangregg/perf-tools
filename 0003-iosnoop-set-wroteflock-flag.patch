@@ -1,0 +1,32 @@
+From 881fd96c4bcf49d70c55b71e04dcc02a08d2bb44 Mon Sep 17 00:00:00 2001
+From: Andreas Klinger <ak@it-klinger.de>
+Date: Thu, 7 Jan 2021 10:38:45 +0100
+Subject: [PATCH 3/5] iosnoop: set wroteflock flag
+
+Set a flag to indicate that file lock was written. Also add a warning
+when switching off current_tracer.
+
+Signed-off-by: Andreas Klinger <ak@it-klinger.de>
+---
+ iosnoop | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/iosnoop b/iosnoop
+index 555c080..4eccb33 100755
+--- a/iosnoop
++++ b/iosnoop
+@@ -189,9 +189,10 @@ cd $tracing || die "ERROR: accessing tracing. Root user? Kernel has FTRACE?
+ ### ftrace lock
+ [[ -e $flock ]] && die "ERROR: ftrace may be in use by PID $(cat $flock) $flock"
+ echo $$ > $flock || die "ERROR: unable to write $flock."
++wroteflock=1
+ 
+ ### setup and begin tracing
+-echo nop > current_tracer
++warn "echo nop > current_tracer"
+ warn "echo $bufsize_kb > buffer_size_kb"
+ filter=
+ if (( opt_iotype )); then
+-- 
+2.20.1
+

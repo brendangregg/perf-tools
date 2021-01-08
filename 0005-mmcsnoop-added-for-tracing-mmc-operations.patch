@@ -1,0 +1,328 @@
+From 4608bdab5541df83f12098f31925a0e3dc1cc4e7 Mon Sep 17 00:00:00 2001
+From: Andreas Klinger <ak@it-klinger.de>
+Date: Wed, 6 Jan 2021 19:47:35 +0100
+Subject: [PATCH 5/5] mmcsnoop: added for tracing mmc operations
+
+Prints out relevant datas of mmc commands by using ftrace framework.
+
+In comparison to the iosnoop script which is tracing block i/o
+operations there are a couple of informations special to mmc devices and
+shown by this script:
+- operation command (opcode)
+- command argument
+- command flags
+- error code
+
+Make use of ftrace instances feature for being able to start several
+ftrace scripts simultaneously. Use trace_clock global to be compareable
+to dmesg and between cpu cores.
+
+Signed-off-by: Andreas Klinger <ak@it-klinger.de>
+---
+ mmcsnoop | 294 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 294 insertions(+)
+ create mode 100755 mmcsnoop
+
+diff --git a/mmcsnoop b/mmcsnoop
+new file mode 100755
+index 0000000..4b07633
+--- /dev/null
++++ b/mmcsnoop
+@@ -0,0 +1,294 @@
++#!/bin/bash
++#
++# SPDX-License-Identifier: GPL-2.0+
++#
++# mmcsnoop - trace mmc device I/O.
++#           Written using Linux ftrace.
++#
++# This traces mmc I/O at the mmc device interface, using the mmc:
++# tracepoints. This can help characterize the mmc I/O requested for the
++# devices and their resulting performance.
++#
++# USAGE: ./mmcsnoop [-h] [-d device] [-p pid] [-n name] [duration]
++#
++# Run "mmcsnoop -h" for full usage.
++#
++# REQUIREMENTS: FTRACE CONFIG, mmc:mmc_request_* tracepoints (you may
++# already have these on recent kernels).
++#
++# OVERHEAD: By default, mmcsnoop works without buffering, printing I/O
++# events as they happen (uses trace_pipe), context switching and consuming
++# CPU to do so. This has a limit of about 10,000 IOPS (depending on your
++# platform), at which point mmcsnoop will be consuming 1 CPU. The duration
++# mode uses buffering, and can handle much higher IOPS rates, however, the
++# buffer has a limit of about 50,000 I/O, after which events will be
++# dropped. You can tune this with bufsize_kb, which is per-CPU. Also note
++# that the "-n" option is currently post-filtered, so all events are
++# traced.
++#
++# This was written as a proof of concept for ftrace. It would be better
++# written using perf_events (after some capabilities are added), which has
++# a better buffering policy, or a tracer such as SystemTap or ktap.
++#
++# Used script iosnoop with the following copyright notices:
++#
++# From perf-tools: https://github.com/brendangregg/perf-tools
++#
++# COPYRIGHT: Copyright (c) 2014 Brendan Gregg.
++# 12-Jul-2014	Brendan Gregg	Created this.
++#
++#
++# Implementation of mmcsnoop:
++# 06-Jan-2021	Andreas Klinger <ak@it-klinger.de>
++
++### default variables
++sname=mmcsnoop
++tracing=/sys/kernel/debug/tracing
++flock=/var/tmp/.$sname-lock
++bufsize_kb=4096
++opt_duration=0; duration=; opt_name=0; name=; opt_pid=0; pid=; ftext=
++opt_device=0; device=; 
++trap ':' INT QUIT TERM PIPE HUP	# sends execution to end tracing section
++
++function usage {
++	cat <<-END >&2
++	USAGE: $sname [-h] [-d device] [-p PID] [-n name] [duration]
++	                 -d device       # device string (eg, "202,1)
++	                 -n name         # process name to match on I/O issue
++	                 -p PID          # PID to match on I/O issue
++	                 -h              # this usage message
++	                 duration        # duration seconds, and use buffers
++	  eg,
++	       $sname                    # watch mmc I/O live (unbuffered)
++	       $sname 1                 # trace 1 sec (buffered)
++	       $sname -p 91             # show I/O issued when PID 91 is on-CPU
++
++	See the man page and example file for more info.
++END
++	exit
++}
++
++function warn {
++	if ! eval "$@"; then
++		echo >&2 "WARNING: command failed \"$@\""
++	fi
++}
++
++function end {
++	# disable tracing
++	echo 2>/dev/null
++	echo "Ending tracing..." 2>/dev/null
++	cd $tracing
++	[[ -d instances ]] && cd instances && cd $sname
++	warn "echo 0 > events/mmc/mmc_request_start/enable"
++	warn "echo 0 > events/mmc/mmc_request_done/enable"
++	if (( opt_device || opt_pid )); then
++		warn "echo 0 > events/mmc/mmc_request_start/filter"
++		warn "echo 0 > events/mmc/mmc_request_done/filter"
++	fi
++	warn "echo > trace"
++
++	cd $tracing
++	[[ -d instances ]] && cd instances && rmdir $sname
++
++	(( wroteflock )) && warn "rm $flock"
++}
++
++function die {
++	echo >&2 "$@"
++	exit 1
++}
++
++function edie {
++	# die with a quiet end()
++	echo >&2 "$@"
++	exec >/dev/null 2>&1
++	end
++	exit 1
++}
++
++function use_instances {
++	cd instances
++	[[ -d $sname ]] || mkdir $sname
++	cd $sname
++}
++
++### process options
++while getopts d:hi:n:p:Qst opt
++do
++	case $opt in
++	d)	opt_device=1; device=$OPTARG ;;
++	n)	opt_name=1; name=$OPTARG ;;
++	p)	opt_pid=1; pid=$OPTARG ;;
++	h|?)	usage ;;
++	esac
++done
++shift $(( $OPTIND - 1 ))
++if (( $# )); then
++	opt_duration=1
++	duration=$1
++	shift
++fi
++if (( opt_device )); then
++	major=${device%,*}
++	minor=${device#*,}
++	dev=$(( (major << 20) + minor ))
++fi
++
++### option logic
++(( opt_pid && opt_name )) && die "ERROR: use either -p or -n."
++(( opt_pid )) && ftext=" issued by PID $pid"
++(( opt_name )) && ftext=" issued by process name \"$name\""
++if (( opt_duration )); then
++	echo "Tracing mmc I/O $ftext for $duration seconds (buffered)..."
++else
++	echo "Tracing mmc I/O $ftext. Ctrl-C to end."
++fi
++
++### select awk
++(( opt_duration )) && use=mawk || use=gawk	# workaround for mawk fflush()
++[[ -x /usr/bin/$use ]] && awk=$use || awk=awk
++wroteflock=1
++
++### check permissions
++cd $tracing || die "ERROR: accessing tracing. Root user? Kernel has FTRACE?
++    debugfs mounted? (mount -t debugfs debugfs /sys/kernel/debug)"
++
++[[ -d instances ]] && use_instances
++
++# for comparison with dmesg we use global clock
++warn "echo global > trace_clock"
++
++### ftrace lock
++[[ -e $flock ]] && die "ERROR: ftrace may be in use by PID $(cat $flock) $flock"
++echo $$ > $flock || die "ERROR: unable to write $flock."
++wroteflock=1
++
++### setup and begin tracing
++warn "echo nop > current_tracer"
++warn "echo $bufsize_kb > buffer_size_kb"
++filter=
++if (( opt_device )); then
++	[[ "$filter" != "" ]] && filter="$filter && "
++	filter="${filter}name == \"$device\""
++fi
++filter_i=$filter
++if (( opt_pid )); then
++	[[ "$filter_i" != "" ]] && filter_i="$filter_i && "
++	filter_i="${filter_i}common_pid == $pid"
++	[[ "$filter" == "" ]] && filter=0
++fi
++if (( opt_device || opt_pid )); then
++	if ! echo "$filter_i" > events/mmc/mmc_request_start/filter || \
++	    ! echo "$filter" > events/mmc/mmc_request_done/filter
++	then
++		die "ERROR: setting -d or -t filter. Exiting."
++	fi
++fi
++if ! echo 1 > events/mmc/mmc_request_start/enable || \
++    ! echo 1 > events/mmc/mmc_request_done/enable; then
++	die "ERROR: enabling mmc I/O tracepoints. Exiting."
++fi
++printf "%-14.14s %6s %6s  %-18s %4s  %10s  %10s %10s %8s %8s %14s %14s\n"  \
++    "COMM" "PID" "DEV" "MRQ" "OPCD" "CMD_ARG" "CMD_FLAGS"        \
++    "CMD_ERR" "BYTES" "LAT[us]" "START-TS" "END-TS"
++
++#
++# Determine output format. It may be one of the following (newest first):
++#           TASK-PID   CPU#  ||||    TIMESTAMP  FUNCTION
++#           TASK-PID    CPU#    TIMESTAMP  FUNCTION
++# To differentiate between them, the number of header fields is counted,
++# and an offset set, to skip the extra column when needed.
++#
++offset=$($awk 'BEGIN { o = 0; }
++	$1 == "#" && $2 ~ /TASK/ && NF == 6 { o = 1; }
++	$2 ~ /TASK/ { print o; exit }' trace)
++
++### print trace buffer
++warn "echo > trace"
++( if (( opt_duration )); then
++	# wait then dump buffer
++	sleep $duration
++	cat trace
++else
++	# print buffer live
++	cat trace_pipe
++fi ) | $awk -v o=$offset -v opt_name=$opt_name -v name=$name \
++    -v opt_duration=$opt_duration '
++
++	# common fields
++	$1 != "#" {
++		# task name can contain dashes
++		comm = pid = $1
++		sub(/-[0-9][0-9]*/, "", comm)
++		sub(/.*-/, "", pid)
++		time = $(3+o); sub(":", "", time)
++		dev = $(5+o)
++		sub(/:/, "", dev)
++
++		sstr = "struct mmc_request["
++		mrq0 = substr($0, index($0, sstr) + length(sstr))
++		mrq = substr(mrq0, 0, index(mrq0, "]") - 1)
++
++		opcode = substr($0, index($0, "opcode=") + 7)
++		sub(/ .*/, "", opcode)
++	}
++
++	# mmc request start
++	$1 != "#" && $0 ~ /mmc_request_start/ {
++		if (opt_name && match(comm, name) == 0)
++			next
++
++		cmd_arg = substr($0, index($0, "cmd_arg=") + 8)
++		sub(/ .*/, "", cmd_arg)
++		cmd_args[mrq] = cmd_arg
++		
++		cmd_flag = substr($0, index($0, "cmd_flags=") + 10)
++		sub(/ .*/, "", cmd_flag)
++		cmd_flags[mrq] = cmd_flag
++
++		stime[mrq] = time
++		comms[mrq] = comm
++		pids[mrq] = pid
++		next
++	}
++
++	# mmc request done
++	$1 != "#" && $0 ~ /mmc_request_done/ {
++		if (stime[mrq] > 0) {
++			etime[mrq] = time
++			latency = (etime[mrq] - stime[mrq]) * 1000000
++
++			cmd_err = substr($0, index($0, "cmd_err=") + 8)
++			sub(/ .*/, "", cmd_err)
++
++			bytes_xfered = substr($0, index($0, "bytes_xfered=") + 13)
++			sub(/ .*/, "", bytes_xfered)
++
++			printf "%-14.14s %6s %6s  %-18s %4d  %10s  %10s %10s %8d %8d %14.6f %14.6f\n",
++			    comms[mrq], pids[mrq], dev, mrq, opcode,
++			    cmd_args[mrq], cmd_flags[mrq], cmd_err,
++			    bytes_xfered, latency, stime[mrq], etime[mrq]
++			if (!opt_duration)
++				fflush()
++
++			delete comms[mrq]
++			delete pids[mrq]
++			delete stime[mrq]
++			delete etime[mrq]
++			delete cmd_args[mrq]
++			delete cmd_flags[mrq]
++		}
++		next
++	}
++
++	$0 ~ /LOST.*EVENTS/ { print "WARNING: " $0 > "/dev/stderr" }
++'
++
++### end tracing
++end
++
++# example output of ftrace
++#
++#    kworker/2:1H-2100  [002] ....   615.658880: mmc_request_start: mmc1: start struct mmc_request[0000000097276643]: cmd_opcode=25 cmd_arg=0x574940 cmd_flags=0xb5 cmd_retries=0 stop_opcode=12 stop_arg=0x0 stop_flags=0x49d stop_retries=0 sbc_opcode=23 sbc_arg=0x320 sbc_flags=0x15 sbc_retires=0 blocks=800 block_size=512 blk_addr=5720384 data_flags=0x100 tag=1 can_retune=1 doing_retune=0 retune_now=0 need_retune=0 hold_retune=1 retune_period=0
++#          <idle>-0     [000] ..s1   615.690018: mmc_request_done: mmc1: end struct mmc_request[0000000097276643]: cmd_opcode=25 cmd_err=0 cmd_resp=0x900 0x0 0x0 0x0 cmd_retries=0 stop_opcode=12 stop_err=0 stop_resp=0x0 0x0 0x0 0x0 stop_retries=0 sbc_opcode=23 sbc_err=0 sbc_resp=0x0 0x0 0x0 0x0 sbc_retries=0 bytes_xfered=409600 data_err=0 tag=1 can_retune=1 doing_retune=0 retune_now=0 need_retune=0 hold_retune=1 retune_period=0
+-- 
+2.20.1
+
