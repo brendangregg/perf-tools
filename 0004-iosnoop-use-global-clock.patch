@@ -1,0 +1,30 @@
+From 50e8798ac41eca69f1554b315088f7fb164e8a6c Mon Sep 17 00:00:00 2001
+From: Andreas Klinger <ak@it-klinger.de>
+Date: Thu, 7 Jan 2021 10:40:28 +0100
+Subject: [PATCH 4/5] iosnoop: use global clock
+
+Make usage of trace_clock global. This makes tracing output of different
+cores compareable not only among each other but also to dmesg.
+
+Signed-off-by: Andreas Klinger <ak@it-klinger.de>
+---
+ iosnoop | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/iosnoop b/iosnoop
+index 4eccb33..a6b1751 100755
+--- a/iosnoop
++++ b/iosnoop
+@@ -186,6 +186,9 @@ cd $tracing || die "ERROR: accessing tracing. Root user? Kernel has FTRACE?
+ 
+ [[ -d instances ]] && use_instances
+ 
++# for comparison with dmesg we use global clock
++warn "echo global > trace_clock"
++
+ ### ftrace lock
+ [[ -e $flock ]] && die "ERROR: ftrace may be in use by PID $(cat $flock) $flock"
+ echo $$ > $flock || die "ERROR: unable to write $flock."
+-- 
+2.20.1
+

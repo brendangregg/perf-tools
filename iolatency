@@ -40,8 +40,9 @@
 # 20-Jul-2014	Brendan Gregg	Created this.
 
 ### default variables
+sname=iolatency
 tracing=/sys/kernel/debug/tracing
-flock=/var/tmp/.ftrace-lock
+flock=/var/tmp/.$sname-lock
 bufsize_kb=4096
 opt_device=0; device=; opt_iotype=0; iotype=; opt_timestamp=0
 opt_interval=0; interval=1; opt_count=0; count=0; opt_queue=0
@@ -49,7 +50,7 @@ trap ':' INT QUIT TERM PIPE HUP	# sends execution to end tracing section
 
 function usage {
 	cat <<-END >&2
-	USAGE: iolatency [-hQT] [-d device] [-i iotype] [interval [count]]
+	USAGE: $sname [-hQT] [-d device] [-i iotype] [interval [count]]
 	                 -d device       # device string (eg, "202,1)
 	                 -i iotype       # match type (eg, '*R*' for all reads)
 	                 -Q              # use queue insert as start time
@@ -58,11 +59,11 @@ function usage {
 	                 interval        # summary interval, seconds (default 1)
 	                 count           # number of summaries
 	  eg,
-	       iolatency                 # summarize latency every second
-	       iolatency -Q              # include block I/O queue time
-	       iolatency 5 2             # 2 x 5 second summaries
-	       iolatency -i '*R*'        # trace reads
-	       iolatency -d 202,1        # trace device 202,1 only
+	       $sname                 # summarize latency every second
+	       $sname -Q              # include block I/O queue time
+	       $sname 5 2             # 2 x 5 second summaries
+	       $sname -i '*R*'        # trace reads
+	       $sname -d 202,1        # trace device 202,1 only
 
 	See the man page and example file for more info.
 END
@@ -80,6 +81,7 @@ function end {
 	echo 2>/dev/null
 	echo "Ending tracing..." 2>/dev/null
 	cd $tracing
+	[[ -d instances ]] && cd instances && cd $sname
 	warn "echo 0 > events/block/$b_start/enable"
 	warn "echo 0 > events/block/block_rq_complete/enable"
 	if (( opt_device || opt_iotype )); then
@@ -87,6 +89,10 @@ function end {
 		warn "echo 0 > events/block/block_rq_complete/filter"
 	fi
 	warn "echo > trace"
+
+	cd $tracing
+	[[ -d instances ]] && cd instances && rmdir $sname
+
 	(( wroteflock )) && warn "rm $flock"
 }
 
@@ -101,6 +107,12 @@ function edie {
 	exec >/dev/null 2>&1
 	end
 	exit 1
+}
+
+function use_instances {
+	cd instances
+	[[ -d $sname ]] || mkdir $sname
+	cd $sname
 }
 
 ### process options
@@ -141,6 +153,8 @@ fi
 ### check permissions
 cd $tracing || die "ERROR: accessing tracing. Root user? Kernel has FTRACE?
     debugfs mounted? (mount -t debugfs debugfs /sys/kernel/debug)"
+
+[[ -d instances ]] && use_instances
 
 ### ftrace lock
 [[ -e $flock ]] && die "ERROR: ftrace may be in use by PID $(cat $flock) $flock"

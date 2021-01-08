@@ -1,0 +1,102 @@
+From 3a670066e0293eb436e672a7b2c538bad656819c Mon Sep 17 00:00:00 2001
+From: Andreas Klinger <ak@it-klinger.de>
+Date: Thu, 7 Jan 2021 10:37:00 +0100
+Subject: [PATCH 2/5] iosnoop: use ftrace instances
+
+Make use of ftrace instances feature for being able to start several
+ftrace scripts simultaneously.
+
+Signed-off-by: Andreas Klinger <ak@it-klinger.de>
+---
+ iosnoop | 32 +++++++++++++++++++++++---------
+ 1 file changed, 23 insertions(+), 9 deletions(-)
+
+diff --git a/iosnoop b/iosnoop
+index 603b3e8..555c080 100755
+--- a/iosnoop
++++ b/iosnoop
+@@ -53,8 +53,9 @@
+ # 12-Jul-2014	Brendan Gregg	Created this.
+ 
+ ### default variables
++sname=iosnoop
+ tracing=/sys/kernel/debug/tracing
+-flock=/var/tmp/.ftrace-lock
++flock=/var/tmp/.$sname-lock
+ bufsize_kb=4096
+ opt_duration=0; duration=; opt_name=0; name=; opt_pid=0; pid=; ftext=
+ opt_start=0; opt_end=0; opt_device=0; device=; opt_iotype=0; iotype=
+@@ -63,7 +64,7 @@ trap ':' INT QUIT TERM PIPE HUP	# sends execution to end tracing section
+ 
+ function usage {
+ 	cat <<-END >&2
+-	USAGE: iosnoop [-hQst] [-d device] [-i iotype] [-p PID] [-n name]
++	USAGE: $sname [-hQst] [-d device] [-i iotype] [-p PID] [-n name]
+ 	               [duration]
+ 	                 -d device       # device string (eg, "202,1)
+ 	                 -i iotype       # match type (eg, '*R*' for all reads)
+@@ -75,13 +76,13 @@ function usage {
+ 	                 -h              # this usage message
+ 	                 duration        # duration seconds, and use buffers
+ 	  eg,
+-	       iosnoop                   # watch block I/O live (unbuffered)
+-	       iosnoop 1                 # trace 1 sec (buffered)
+-	       iosnoop -Q                # include queueing time in LATms
+-	       iosnoop -ts               # include start and end timestamps
+-	       iosnoop -i '*R*'          # trace reads
+-	       iosnoop -p 91             # show I/O issued when PID 91 is on-CPU
+-	       iosnoop -Qp 91            # show I/O queued by PID 91, queue time
++	       $sname                   # watch block I/O live (unbuffered)
++	       $sname 1                 # trace 1 sec (buffered)
++	       $sname -Q                # include queueing time in LATms
++	       $sname -ts               # include start and end timestamps
++	       $sname -i '*R*'          # trace reads
++	       $sname -p 91             # show I/O issued when PID 91 is on-CPU
++	       $sname -Qp 91            # show I/O queued by PID 91, queue time
+ 
+ 	See the man page and example file for more info.
+ END
+@@ -99,6 +100,7 @@ function end {
+ 	echo 2>/dev/null
+ 	echo "Ending tracing..." 2>/dev/null
+ 	cd $tracing
++	[[ -d instances ]] && cd instances && cd $sname
+ 	warn "echo 0 > events/block/$b_start/enable"
+ 	warn "echo 0 > events/block/block_rq_complete/enable"
+ 	if (( opt_device || opt_iotype || opt_pid )); then
+@@ -106,6 +108,10 @@ function end {
+ 		warn "echo 0 > events/block/block_rq_complete/filter"
+ 	fi
+ 	warn "echo > trace"
++
++	cd $tracing
++	[[ -d instances ]] && cd instances && rmdir $sname
++
+ 	(( wroteflock )) && warn "rm $flock"
+ }
+ 
+@@ -122,6 +128,12 @@ function edie {
+ 	exit 1
+ }
+ 
++function use_instances {
++	cd instances
++	[[ -d $sname ]] || mkdir $sname
++	cd $sname
++}
++
+ ### process options
+ while getopts d:hi:n:p:Qst opt
+ do
+@@ -172,6 +184,8 @@ wroteflock=1
+ cd $tracing || die "ERROR: accessing tracing. Root user? Kernel has FTRACE?
+     debugfs mounted? (mount -t debugfs debugfs /sys/kernel/debug)"
+ 
++[[ -d instances ]] && use_instances
++
+ ### ftrace lock
+ [[ -e $flock ]] && die "ERROR: ftrace may be in use by PID $(cat $flock) $flock"
+ echo $$ > $flock || die "ERROR: unable to write $flock."
+-- 
+2.20.1
+
