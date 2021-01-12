@@ -165,12 +165,6 @@ wget https://raw.githubusercontent.com/brendangregg/perf-tools/master/iosnoop
 
 This preserves tabs (which copy-n-paste can mess up).
 
-## Warnings
-
-Ftrace was first added to Linux 2.6.27, and perf_events to Linux 2.6.31. These early versions had kernel bugs, and lockups and panics have been reported on 2.6.32 series kernels. This includes CentOS 6.x. If you must analyze older kernels, these tools may only be useful in a fault-tolerant environment, such as a lab with simulated issues. These tools have been primarily developed on Linux 3.2 and later kernels.
-
-Depending on the tool, there may also be overhead incurred. See the next section.
-
 ## Internals and Overhead
 
 perf_events is evolving. This collection began development circa Linux 3.16, with Linux 3.2 servers as the main target, at a time when perf_events lacks certain programmatic capabilities (eg, custom in-kernel aggregations). It's possible these will be added in a forthcoming kernel release. Until then, many of these tools employ workarounds, tricks, and hacks in order to work. Some of these tools pass event data to user space for post-processing, which costs much higher overhead than in-kernel aggregations. The overhead of each tool is described in its man page.
