@@ -3,7 +3,7 @@
 funcgraph \- trace kernel function graph, showing child function calls and times. Uses Linux ftrace.
 .SH SYNOPSIS
 .B funcgraph
-[\-aCDhHPtT] [\-m maxdepth] [\-p PID] [\-d secs] funcstring
+[\-aCDhHPtT] [\-m maxdepth] [\-p PID] [\-L TID] [\-d secs] funcstring
 .SH DESCRIPTION
 This is an exploratory tool that shows the graph of child function calls
 for a given kernel function. This can cost moderate overhead to execute, and
@@ -65,6 +65,9 @@ available for newer Linux kernel versions.
 .TP
 \-p PID
 Only trace kernel functions when this process ID is on-CPU.
+.TP
+\-L TID
+Only trace kernel functions when this thread ID is on-CPU.
 .TP
 \-P
 Show process names and process IDs with every line of output.

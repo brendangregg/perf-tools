@@ -101,6 +101,7 @@ USAGE: funcslower [-aChHPt] [-p PID] [-d secs] funcstring latency_us
                  -h              # this usage message
                  -H              # include column headers
                  -p PID          # trace when this pid is on-CPU
+                 -L TID          # trace when this thread is on-CPU
                  -P              # show process names & PIDs
                  -t              # show timestamps
   eg,

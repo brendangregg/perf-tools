@@ -17,6 +17,7 @@ These tools were introduced in the USENIX LISA 2014 presentation: Linux Performa
 - video: https://www.usenix.org/conference/lisa14/conference-program/presentation/gregg
 
 ## Contents
+<center><a href="images/perf-tools_2016.png"><img src="images/perf-tools_2016.png" border=0 width=700></a></center>
 
 Using ftrace:
 
@@ -41,6 +42,10 @@ Using perf_events:
 - misc/[perf-stat-hist](misc/perf-stat-hist): power-of aggregations for tracepoint variables. [Examples](examples/perf-stat-hist_example.txt).
 - [syscount](syscount): count syscalls by syscall or process. [Examples](examples/syscount_example.txt).
 - disk/[bitesize](disk/bitesize): histogram summary of disk I/O size. [Examples](examples/bitesize_example.txt).
+
+Using eBPF:
+
+- As a preview of things to come, see the bcc tracing [Tools section](https://github.com/iovisor/bcc/blob/master/README.md#tracing). These use [bcc](https://github.com/iovisor/bcc), a front end for using [eBPF](http://www.brendangregg.com/blog/2015-05-15/ebpf-one-small-step.html). bcc+eBPF will allow some of these tools to be rewritten and improved, and additional tools to be created.
 
 ## Screenshots
 
@@ -178,7 +183,7 @@ Some of these tools are intended as short-term workarounds until more kernel cap
 
 As my main target is a fleet of Linux 3.2 servers that do not have debuginfo, these tools try not to require it. At times, this makes the tool more brittle than it needs to be, as I'm employing workarounds (that may be kernel version and platform specific) instead of using debuginfo information (which can be generic). See the man page for detailed prerequisites for each tool.
 
-I've tried to use perf_events ("perf") where possible, since that interface has been developed for multi-user use. For various reasons I've often needed to use ftrace instead. ftrace is suprisingly powerful (thanks Steven Rostedt!), and not all of its features are exposed via perf, or in common usage. This tool collection is in some ways a demonstration of hidden Linux features using ftrace.
+I've tried to use perf_events ("perf") where possible, since that interface has been developed for multi-user use. For various reasons I've often needed to use ftrace instead. ftrace is surprisingly powerful (thanks Steven Rostedt!), and not all of its features are exposed via perf, or in common usage. This tool collection is in some ways a demonstration of hidden Linux features using ftrace.
 
 Since things are changing, it's very possible you may find some tools don't work on your Linux kernel version. Some expertise and assembly will be required to fix them.
 

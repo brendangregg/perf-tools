@@ -286,12 +286,13 @@ a different method of stack walking.
 Use -h to print the USAGE message:
 
 # ./uprobe -h
-USAGE: uprobe [-FhHsv] [-d secs] [-p PID] {-l target |
+USAGE: uprobe [-FhHsv] [-d secs] [-p PID] [-L TID] {-l target |
               uprobe_definition [filter]}
                  -F              # force. trace despite warnings.
                  -d seconds      # trace duration, and use buffers
                  -l target       # list functions from this executable
-                 -p PID          # PID to match on I/O issue
+                 -p PID          # PID to match on events
+                 -L TID          # thread id to match on events
                  -v              # view format file (don't trace)
                  -H              # include column headers
                  -s              # show user stack traces

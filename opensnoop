@@ -13,7 +13,7 @@
 # It is a workaround, and proof of concept for ftrace, until more kernel tracing
 # functionality is available.
 #
-# USAGE: ./opensnoop [-htx] [-d secs] [-p pid] [-n name] [filename]
+# USAGE: ./opensnoop [-htx] [-d secs] [-p pid] [-L tid] [-n name] [filename]
 #
 # Run "opensnoop -h" for full usage.
 #
@@ -48,16 +48,17 @@
 ### default variables
 tracing=/sys/kernel/debug/tracing
 flock=/var/tmp/.ftrace-lock; wroteflock=0
-opt_duration=0; duration=; opt_name=0; name=; opt_pid=0; pid=; ftext=
-opt_time=0; opt_fail=0; opt_file=0; file=
+opt_duration=0; duration=; opt_name=0; name=; opt_pid=0; pid=; opt_tid=0; tid=
+ftext=; opt_time=0; opt_fail=0; opt_file=0; file=
 trap ':' INT QUIT TERM PIPE HUP	# sends execution to end tracing section
 
 function usage {
 	cat <<-END >&2
-	USAGE: opensnoop [-htx] [-d secs] [-p PID] [-n name] [filename]
+	USAGE: opensnoop [-htx] [-d secs] [-p PID] [-L TID] [-n name] [filename]
 	                 -d seconds      # trace duration, and use buffers
-	                 -n name         # process name to match on I/O issue
-	                 -p PID          # PID to match on I/O issue
+	                 -n name         # process name to match on open
+	                 -p PID          # PID to match on open
+	                 -L TID          # PID to match on open
 	                 -t              # include time (seconds)
 	                 -x              # only show failed opens
 	                 -h              # this usage message
@@ -87,9 +88,11 @@ function end {
 	cd $tracing
 	warn "echo 0 > events/kprobes/getnameprobe/enable"
 	warn "echo 0 > events/syscalls/sys_exit_open/enable"
-	if (( opt_pid )); then
+	warn "echo 0 > events/syscalls/sys_exit_openat/enable"
+	if (( opt_pid || opt_tid )); then
 		warn "echo 0 > events/kprobes/getnameprobe/filter"
 		warn "echo 0 > events/syscalls/sys_exit_open/filter"
+		warn "echo 0 > events/syscalls/sys_exit_openat/filter"
 	fi
 	warn "echo -:getnameprobe >> kprobe_events"
 	warn "echo > trace"
@@ -110,12 +113,13 @@ function edie {
 }
 
 ### process options
-while getopts d:hn:p:tx opt
+while getopts d:hn:p:L:tx opt
 do
 	case $opt in
 	d)	opt_duration=1; duration=$OPTARG ;;
 	n)	opt_name=1; name=$OPTARG ;;
 	p)	opt_pid=1; pid=$OPTARG ;;
+	L)	opt_tid=1; tid=$OPTARG ;;
 	t)	opt_time=1 ;;
 	x)	opt_fail=1 ;;
 	h|?)	usage ;;
@@ -130,8 +134,10 @@ fi
 (( $# )) && usage
 
 ### option logic
-(( opt_pid && opt_name )) && die "ERROR: use either -p or -n."
+(( opt_pid + opt_name + opt_tid > 1 )) && \
+	die "ERROR: use at most one of -p, -n, -L."
 (( opt_pid )) && ftext=" issued by PID $pid"
+(( opt_tid )) && ftext=" issued by TID $tid"
 (( opt_name )) && ftext=" issued by process name \"$name\""
 (( opt_file )) && ftext="$ftext for filenames containing \"$file\""
 if (( opt_duration )); then
@@ -167,10 +173,24 @@ if ! echo $kprobe >> kprobe_events; then
 	edie "ERROR: adding a kprobe for getname(). Exiting."
 fi
 if (( opt_pid )); then
-	if ! echo "common_pid==$pid" > events/kprobes/getnameprobe/filter || \
-	    ! echo "common_pid==$pid" > events/syscalls/sys_exit_open/filter
+	filter=
+	for tid in /proc/$pid/task/*; do
+		filter="$filter || common_pid == ${tid##*/}"
+	done
+	filter=${filter:3}  # trim leading ' || ' (four characters)
+	if ! echo $filter > events/kprobes/getnameprobe/filter || \
+	    ! echo $filter > events/syscalls/sys_exit_open/filter || \
+	    ! echo $filter > events/syscalls/sys_exit_openat/filter
 	then
 	    edie "ERROR: setting -p $pid. Exiting."
+	fi
+fi
+if (( opt_tid )); then
+	if ! echo "common_pid == $tid" > events/kprobes/getnameprobe/filter || \
+	    ! echo "common_pid == $tid" > events/syscalls/sys_exit_open/filter || \
+	    ! echo "common_pid == $tid" > events/syscalls/sys_exit_openat/filter
+	then
+	    edie "ERROR: setting -L $tid. Exiting."
 	fi
 fi
 if ! echo 1 > events/kprobes/getnameprobe/enable; then
@@ -178,6 +198,9 @@ if ! echo 1 > events/kprobes/getnameprobe/enable; then
 fi
 if ! echo 1 > events/syscalls/sys_exit_open/enable; then
 	edie "ERROR: enabling open() exit tracepoint. Exiting."
+fi
+if ! echo 1 > events/syscalls/sys_exit_openat/enable; then
+	edie "ERROR: enabling openat() exit tracepoint. Exiting."
 fi
 (( opt_time )) && printf "%-16s " "TIMEs"
 printf "%-16.16s %-6s %4s %s\n" "COMM" "PID" "FD" "FILE"
@@ -222,15 +245,15 @@ fi ) | $awk -v o=$offset -v opt_name=$opt_name -v name=$name \
 		#
 		# eg: ... (do_sys_open+0xc3/0x220 <- getname) arg1="file1"
 		#
-		filename = $NF
-		sub(/"$/, "", filename)
-		sub(/.*"/, "", filename)
-		lastfile[pid] = filename
+		match($0, /arg1=\"(.+)\"/, m)
+		lastfile[pid] = m[1]
 	}
 
-	# sys_open()
-	$1 != "#" && $(4+o) == "sys_open" {
+	# sys_open() / sys_openat()
+	$1 != "#" && ($(4+o) == "sys_open" || $(4+o) == "sys_openat") {
 		filename = lastfile[pid]
+		if (!filename)
+			next
 		delete lastfile[pid]
 		if (opt_file && filename !~ file)
 			next
@@ -248,7 +271,9 @@ fi ) | $awk -v o=$offset -v opt_name=$opt_name -v name=$name \
 		printf "%-16.16s %-6s %4s %s\n", comm, pid, rval, filename
 	}
 
-	$0 ~ /LOST.*EVENTS/ { print "WARNING: " $0 > "/dev/stderr" }
+	$0 ~ /LOST.*EVENTS/ {
+		delete lastfile
+		print "WARNING: " $0 > "/dev/stderr" }
 '
 
 ### end tracing

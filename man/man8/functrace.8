@@ -3,7 +3,7 @@
 functrace \- trace kernel function calls matching specified wildcards. Uses Linux ftrace.
 .SH SYNOPSIS
 .B functrace
-[\-hH] [\-p PID] [\-d secs] funcstring
+[\-hH] [\-p PID] [\-L TID] [\-d secs] funcstring
 .SH DESCRIPTION
 This tool provides a quick way to capture the execution of kernel functions,
 showing basic details including as the process ID, timestamp, and calling
@@ -44,6 +44,9 @@ Print column headers.
 .TP
 \-p PID
 Only trace kernel functions when this process ID is on-CPU.
+.TP
+\-L TID
+Only trace kernel functions when this thread ID is on-CPU.
 .TP
 funcstring
 A function name to trace, which may include file glob style wildcards ("*") at

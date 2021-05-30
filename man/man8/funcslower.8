@@ -3,7 +3,7 @@
 funcslower \- trace kernel functions slower than a threshold (microseconds). Uses Linux ftrace.
 .SH SYNOPSIS
 .B funcslower
-[\-aChHPt] [\-p PID] [\-d secs] funcstring latency_us
+[\-aChHPt] [\-p PID] [\-L TID] [\-d secs] funcstring latency_us
 .SH DESCRIPTION
 This uses the Linux ftrace function graph profiler to time kernel functions
 and filter them based on a latency threshold. Latency outliers can be studied
@@ -48,6 +48,9 @@ Print column headers.
 .TP
 \-p PID
 Only trace kernel functions when this process ID is on-CPU.
+.TP
+\-L TID
+Only trace kernel functions when this thread ID is on-CPU.
 .TP
 \-P
 Show process names and process IDs with every line of output.
