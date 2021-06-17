@@ -1,0 +1,162 @@
+#!/bin/bash
+#
+# funcstacktrace - kernel function stacktrace tool.
+#
+# USAGE: funcstacktrace [-p PID] [-t TID] [-d duration] [-H] funcstring
+#
+# Run "funcstacktrace -h" for full usage.
+#
+# COPYRIGHT: Copyright (c) 2021 Haocheng Xie <xiehaocheng.cn@gmail.com>.
+#
+#  This program is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU General Public License
+#  as published by the Free Software Foundation; either version 2
+#  of the License, or (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software Foundation,
+#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#
+#
+# 31-May-2021	Haocheng Xie	Created this.
+
+tracing=/sys/kernel/debug/tracing
+flock=/var/run/.ftrace-lock
+flock_flag=0
+opt_pid=0; pid=; opt_tid=0; tid=;
+opt_headers=0; opt_duration=0; duration=;
+trap ':' INT QUIT TERM PIPE HUP	# sends execution to end tracing section
+
+function usage {
+	cat <<-END >&2
+	usage: funcstacktrace [-p PID] [-t TID] [-d duration] [-H] funcstring
+	                 -h              # this usage message
+	                 -H              # include column headers
+	                 -p PID          # trace when this pid is on-CPU
+	                 -t TID          # trace when this thread is on-CPU
+	                 -d duration     # trace duration time to stop
+	  eg:
+	       funcstacktrace do_nanosleep          # trace do_nanosleep() stack
+	       funcstacktrace -d 1 do_sys_open >out # trace 1 sec, then write to file
+
+	See the man page and example file for more info.
+	END
+	exit
+}
+
+function warn {
+	if ! eval "$@"; then
+		echo >&2 "WARNING: command failed \"$@\""
+	fi
+}
+
+function end {
+	echo 2>/dev/null
+	echo "Ending tracing..." 2>/dev/null
+	cd $tracing
+
+	warn "echo nop > current_tracer"
+	(( opt_pid || opt_tid )) && warn "echo > set_ftrace_pid"
+	warn "echo '!${funcs}:stacktrace'> set_ftrace_filter"
+	warn "echo > set_ftrace_filter"
+	warn "echo > trace"
+	unlockfile
+}
+
+function die {
+	echo >&2 "$@"
+	exit 1
+}
+
+function edie {
+	# die with a quiet end()
+	echo >&2 "$@"
+	exec >/dev/null 2>&1
+	end
+	exit 1
+}
+
+function lockfile {
+	[[ -e $flock ]] && die "ERROR: ftrace may be in use by PID $(cat $flock) $flock"
+	echo $$ > $flock || die "ERROR: unable to write $flock."
+	flock_flag=1
+}
+
+function unlockfile {
+	(( flock_flag )) && warn "rm $flock"
+}
+
+while getopts 'p:t:d:Hh' opt; do
+	case $opt in
+	p)	opt_pid=1; pid=$OPTARG ;;
+	t)	opt_tid=1; tid=$OPTARG ;;
+	d)	opt_duration=1; duration=$OPTARG ;;
+	H)	opt_headers=1; ;;
+	h|?)	usage ;;
+	esac
+done
+shift $(($OPTIND - 1))
+
+(( $# == 0 )) && usage
+(( opt_pid && opt_tid )) && die "ERROR: You can use -p or -t but not both."
+(( opt_pid )) && pidtext=" for PID $pid"
+(( opt_tid )) && pidtext=" for TID $tid"
+
+funcs="$1"
+if (( opt_duration )); then
+	echo "Tracing \"$funcs\"$pidtext for $duration seconds..."
+else
+	echo "Tracing \"$funcs\"$pidtext... Ctrl-C to end."
+fi
+
+cd $tracing || die "ERROR: accessing tracing. Root user? Kernel has FTRACE?
+    debugfs mounted? (mount -t debugfs debugfs /sys/kernel/debug)"
+
+lockfile
+
+sysctl -q kernel.ftrace_enabled=1
+read mode < current_tracer
+[[ "$mode" != "nop" ]] && edie "ERROR: ftrace active (current_tracer=$mode)"
+if (( opt_pid )); then
+    echo > set_ftrace_pid
+    for tid in /proc/$pid/task/*; do
+        if ! echo ${tid##*/} >> set_ftrace_pid; then
+            edie "ERROR: setting -p $pid (PID exist?). Exiting."
+        fi
+    done
+fi
+if (( opt_tid )); then
+    if ! echo $tid > set_ftrace_pid; then
+        edie "ERROR: setting -t $tid (TID exist?). Exiting."
+    fi
+fi
+if ! echo "${funcs}" > set_ftrace_filter; then
+	edie "ERROR: writing to set_ftrace_filter. Exiting."
+fi
+if ! echo "${funcs}:stacktrace" >> set_ftrace_filter; then
+	edie "ERROR: writing to set_ftrace_filter. Exiting."
+fi
+if ! echo function > current_tracer; then
+	edie "ERROR: setting current_tracer to \"function\". Exiting."
+fi
+
+warn "echo > trace"
+if (( opt_duration )); then
+	sleep $duration
+	if (( opt_headers )); then
+		cat trace
+	else
+		grep -v '^#' trace
+	fi
+else
+	# trace_pipe lack headers, so fetch them from trace
+	(( opt_headers )) && cat trace
+	cat trace_pipe
+fi
+
+end
