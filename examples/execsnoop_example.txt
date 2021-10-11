@@ -62,17 +62,17 @@ Cpu(s): 15.7%us, 34.9%sy,  0.0%ni, 49.2%id,  0.0%wa,  0.0%hi,  0.0%si,  0.2%st
 Mem:   7629464k total,  7537216k used,    92248k free,  1376492k buffers
 Swap:        0k total,        0k used,        0k free,  5432356k cached
 
-  PID USER      PR  NI  VIRT  RES  SHR S %CPU %MEM    TIME+  COMMAND                                                                                                       
- 7225 bgregg-t  20   0 29480 6196 2128 S    3  0.1   0:02.64 ec2rotatelogs                                                                                                  
-    1 root      20   0 24320 2256 1340 S    0  0.0   0:01.23 init                                                                                                           
-    2 root      20   0     0    0    0 S    0  0.0   0:00.00 kthreadd                                                                                                       
-    3 root      20   0     0    0    0 S    0  0.0   1:19.61 ksoftirqd/0                                                                                                    
-    4 root      20   0     0    0    0 S    0  0.0   0:00.00 kworker/0:0                                                                                                    
-    5 root      20   0     0    0    0 S    0  0.0   0:00.01 kworker/u:0                                                                                                    
-    6 root      RT   0     0    0    0 S    0  0.0   0:16.00 migration/0                                                                                                    
-    7 root      RT   0     0    0    0 S    0  0.0   0:17.29 watchdog/0                                                                                                     
-    8 root      RT   0     0    0    0 S    0  0.0   0:15.85 migration/1                                                                                                    
-    9 root      20   0     0    0    0 S    0  0.0   0:00.00 kworker/1:0     
+  PID USER      PR  NI  VIRT  RES  SHR S %CPU %MEM    TIME+  COMMAND
+ 7225 bgregg-t  20   0 29480 6196 2128 S    3  0.1   0:02.64 ec2rotatelogs
+    1 root      20   0 24320 2256 1340 S    0  0.0   0:01.23 init
+    2 root      20   0     0    0    0 S    0  0.0   0:00.00 kthreadd
+    3 root      20   0     0    0    0 S    0  0.0   1:19.61 ksoftirqd/0
+    4 root      20   0     0    0    0 S    0  0.0   0:00.00 kworker/0:0
+    5 root      20   0     0    0    0 S    0  0.0   0:00.01 kworker/u:0
+    6 root      RT   0     0    0    0 S    0  0.0   0:16.00 migration/0
+    7 root      RT   0     0    0    0 S    0  0.0   0:17.29 watchdog/0
+    8 root      RT   0     0    0    0 S    0  0.0   0:15.85 migration/1
+    9 root      20   0     0    0    0 S    0  0.0   0:00.00 kworker/1:0
 [...]
 
 See the line starting with "Cpu(s):". So there's about 50% CPU utilized (this

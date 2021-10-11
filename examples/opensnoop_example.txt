@@ -28,7 +28,7 @@ The first several lines show opensnoop catching itself initializing.
 Use -h to print the USAGE message:
 
 # ./opensnoop -h
-USAGE: opensnoop [-htx] [-d secs] [-p PID] [-T TID] [-n name] [filename]
+USAGE: opensnoop [-htx] [-d secs] [-p PID] [-L TID] [-n name] [filename]
                  -d seconds      # trace duration, and use buffers
                  -n name         # process name to match on open
                  -p PID          # PID to match on open
