@@ -194,6 +194,21 @@ if (( debug )); then
 	echo "kname: $kname, kprobe: $kprobe"
 fi
 
+# It's possible - esp on a production kernel - that CONFIG_DEBUG_FS_DISALLOW_MOUNT=y
+# which implies that though the debugfs filesystem's APIs are available, the
+# fs itself isn't mounted - it's invisible. Take this into account, else the script
+# won't work on such systems
+if [ ! -d ${tracing} ]; then
+   if [ -d /sys/kernel/tracing ]; then
+      tracing=/sys/kernel/tracing
+   else
+      die "ISSUE: neither the /sys/kernel/debug/tracing nor /sys/kernel/tracing dir is available"
+   fi  
+fi
+if (( debug )); then
+    echo "tracing dir: ${tracing}"
+fi
+
 ### check permissions
 cd $tracing || die "ERROR: accessing tracing. Root user? Kernel has FTRACE?
     debugfs mounted? (mount -t debugfs debugfs /sys/kernel/debug)"
