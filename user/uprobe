@@ -242,8 +242,9 @@ END
 fi
 
 ### check command dependencies
+needinstall=0
 for cmd in file objdump ldconfig awk; do
-	which $cmd > /dev/null
+    which $cmd > /dev/null
 	(( $? != 0 )) && die "ERROR: missing $cmd in \$PATH. $0 needs" \
 	    "to use this command. Exiting."
 done
