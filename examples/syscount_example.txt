@@ -2,7 +2,7 @@ Demonstrations of syscount, the Linux perf_events version.
 
 
 The first mode I use is "-c", where it behaves like "strace -c", but for the
-entire system (all procesess) and with much lower overhead:
+entire system (all processes) and with much lower overhead:
 
 # ./syscount -c
 Tracing... Ctrl-C to end.
