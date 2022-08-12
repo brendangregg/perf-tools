@@ -6,7 +6,7 @@
 # This is a proof of concept using Linux ftrace capabilities on older kernels,
 # and works by using function profiling: in-kernel counters.
 #
-# USAGE: funccount [-hT] [-i secs] [-d secs] [-t top] funcstring
+# USAGE: funccount [-hT] [-i secs] [-d secs] [-t top] funcstring [funcstring ...]
 #    eg,
 #        funccount 'ext3*'	# count all ext3* kernel function calls
 #
@@ -47,7 +47,7 @@ trap 'quit=1' INT QUIT TERM PIPE HUP	# sends execution to end tracing section
 
 function usage {
 	cat <<-END >&2
-	USAGE: funccount [-hT] [-i secs] [-d secs] [-t top] funcstring
+	USAGE: funccount [-hT] [-i secs] [-d secs] [-t top] funcstring [funcstring ...]
 	                 -d seconds      # total duration of trace
 	                 -h              # this usage message
 	                 -i seconds      # interval summary
@@ -91,7 +91,7 @@ shift $(( $OPTIND - 1 ))
 
 ### option logic
 (( $# == 0 )) && usage
-funcs="$1"
+funcs="${@:1}"
 if (( opt_tail )); then
 	tcmd="tail -$tnum"
 	ttext=" Top $tnum only."

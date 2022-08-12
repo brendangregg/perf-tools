@@ -110,7 +110,7 @@ rate, and can begin researching them from the source code.
 Use -h to print the USAGE message:
 
 # ./funccount -h
-USAGE: funccount [-hT] [-i secs] [-d secs] [-t top] funcstring
+USAGE: funccount [-hT] [-i secs] [-d secs] [-t top] funcstring [funcstring ...]
                  -d seconds      # total duration of trace
                  -h              # this usage message
                  -i seconds      # interval summary
