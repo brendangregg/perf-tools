@@ -10,7 +10,7 @@
 #	mark_page_accessed() for measuring cache accesses
 #	mark_buffer_dirty() for measuring cache writes
 #	add_to_page_cache_lru() for measuring page additions
-#	account_page_dirtied() for measuring page dirties
+#	(account_page|folio_account)_dirtied() for measuring page dirties
 #
 # It is possible that these functions have been renamed (or are different
 # logically) for your kernel version, and this script will not work as-is.
@@ -108,9 +108,14 @@ cd $tracing || die "ERROR: accessing tracing. Root user? Kernel has FTRACE?
 
 ### enable tracing
 sysctl -q kernel.ftrace_enabled=1	# doesn't set exit status
-printf "mark_page_accessed\nmark_buffer_dirty\nadd_to_page_cache_lru\naccount_page_dirtied\n" > set_ftrace_filter || \
+page_dirtied_fn=`uname -r | awk -F. '{\
+	if (\$1 >= 5 && \$2 >= 15) {print "folio_account_dirtied"} \
+	else {print "account_page_dirtied"}\
+}'`
+
+printf "mark_page_accessed\nmark_buffer_dirty\nadd_to_page_cache_lru\n${page_dirtied_fn}\n" > set_ftrace_filter || \
     die "ERROR: tracing these four kernel functions: mark_page_accessed,"\
-    "mark_buffer_dirty, add_to_page_cache_lru and account_page_dirtied (unknown kernel version?). Exiting."
+    "mark_buffer_dirty, add_to_page_cache_lru and ${page_dirtied_fn} (unknown kernel version?). Exiting."
 warn "echo nop > current_tracer"
 if ! echo 1 > function_profile_enabled; then
 	echo > set_ftrace_filter
@@ -143,7 +148,7 @@ while (( !quit && (!opt_duration || secs < duration) )); do
 		mpa = a["mark_page_accessed"]
 		mbd = a["mark_buffer_dirty"]
 		apcl = a["add_to_page_cache_lru"]
-		apd = a["account_page_dirtied"]
+		apd = a[$page_dirtied_fn]
 
 		total = mpa - mbd
 		misses = apcl - apd
